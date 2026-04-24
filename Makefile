@@ -80,6 +80,9 @@ docker-shell: docker-build
 # For Docker-only devs (option 2): installs a pre-commit hook that runs
 # the full quality gate inside the container (no local Node needed).
 hooks:
-	@printf '#!/bin/sh\nmake docker-check\n' > .git/hooks/pre-commit
-	@chmod +x .git/hooks/pre-commit
-	@echo "pre-commit hook installed → runs 'make docker-check'"
+	@hooks_dir="$$(git config --path core.hooksPath 2>/dev/null || true)"; \
+	if [ -z "$$hooks_dir" ]; then hooks_dir=".git/hooks"; fi; \
+	mkdir -p "$$hooks_dir"; \
+	printf '#!/bin/sh\nmake docker-check\n' > "$$hooks_dir/pre-commit"; \
+	chmod +x "$$hooks_dir/pre-commit"; \
+	echo "pre-commit hook installed → $$hooks_dir/pre-commit runs 'make docker-check'"
