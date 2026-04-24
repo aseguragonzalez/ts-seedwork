@@ -8,6 +8,12 @@ class TestEvent extends BaseDomainEvent {
   }
 }
 
+class FailEvent extends BaseDomainEvent {
+  constructor(id: string) {
+    super(id, 'FailEvent', { id }, new Date(), '1.0.0');
+  }
+}
+
 describe('DeferredDomainEventBus (seedwork package)', () => {
   it('should buffer events and flush to handlers', async () => {
     const bus = new DeferredDomainEventBus();
@@ -56,5 +62,39 @@ describe('DeferredDomainEventBus (seedwork package)', () => {
     const bus = new DeferredDomainEventBus();
     await bus.publish([new TestEvent('orphan')]);
     await expect(bus.flush()).resolves.not.toThrow();
+  });
+
+  it('should restore unprocessed events to the buffer when a handler throws', async () => {
+    const bus = new DeferredDomainEventBus();
+    const handled: string[] = [];
+    let shouldFail = true;
+    const failOnceHandler: DomainEventHandler = {
+      handle: async e => {
+        if (shouldFail) {
+          shouldFail = false;
+          throw new Error('handler failure');
+        }
+        handled.push(e.id);
+      },
+    };
+    const successHandler: DomainEventHandler = {
+      handle: async e => void handled.push(e.id),
+    };
+
+    bus.subscribe('TestEvent', [successHandler]);
+    bus.subscribe('FailEvent', [failOnceHandler]);
+
+    await bus.publish([new TestEvent('1'), new FailEvent('2'), new TestEvent('3')]);
+
+    // first flush: dispatches TestEvent('1') then throws on FailEvent('2')
+    await expect(bus.flush()).rejects.toThrow('handler failure');
+
+    // only '1' was dispatched; '2' and '3' must have been restored to the buffer
+    expect(handled).toEqual(['1']);
+
+    // second flush: FailEvent handler no longer throws, remaining events are dispatched
+    await bus.flush();
+    expect(handled).toContain('2');
+    expect(handled).toContain('3');
   });
 });

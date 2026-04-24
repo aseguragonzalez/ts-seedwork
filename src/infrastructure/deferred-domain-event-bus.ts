@@ -17,9 +17,15 @@ export class DeferredDomainEventBus implements DomainEventBus {
   public async flush(): Promise<void> {
     const events = [...this.buffer];
     this.buffer = [];
-    for (const event of events) {
-      const handlers = this.subscriptions.get(event.eventName) ?? [];
-      await Promise.all(handlers.map(h => h.handle(event)));
+    let i = 0;
+    try {
+      for (; i < events.length; i++) {
+        const handlers = this.subscriptions.get(events[i].eventName) ?? [];
+        await Promise.all(handlers.map(h => h.handle(events[i])));
+      }
+    } catch (error) {
+      this.buffer = [...events.slice(i), ...this.buffer];
+      throw error;
     }
   }
 }
