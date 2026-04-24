@@ -8,7 +8,12 @@ export class DomainEventFlushCommandBus implements CommandBus {
   ) {}
 
   public async dispatch(command: Command): Promise<void> {
-    await this.inner.dispatch(command);
+    try {
+      await this.inner.dispatch(command);
+    } catch (error) {
+      this.eventBus.clear();
+      throw error;
+    }
     await this.eventBus.flush();
   }
 }

@@ -64,6 +64,19 @@ describe('DeferredDomainEventBus (seedwork package)', () => {
     await expect(bus.flush()).resolves.not.toThrow();
   });
 
+  it('should discard all buffered events when clear() is called', async () => {
+    const bus = new DeferredDomainEventBus();
+    const handled: DomainEvent[] = [];
+    const handler: DomainEventHandler = { handle: async e => void handled.push(e) };
+
+    bus.subscribe('TestEvent', [handler]);
+    await bus.publish([new TestEvent('1'), new TestEvent('2')]);
+    bus.clear();
+    await bus.flush();
+
+    expect(handled).toHaveLength(0);
+  });
+
   it('should restore unprocessed events to the buffer when a handler throws', async () => {
     const bus = new DeferredDomainEventBus();
     const handled: string[] = [];

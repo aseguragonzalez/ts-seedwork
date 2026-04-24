@@ -14,6 +14,10 @@ export class DeferredDomainEventBus implements DomainEventBus {
     this.buffer.push(...events);
   }
 
+  public clear(): void {
+    this.buffer = [];
+  }
+
   public async flush(): Promise<void> {
     const events = [...this.buffer];
     this.buffer = [];
