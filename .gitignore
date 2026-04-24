@@ -137,3 +137,11 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Husky files
+.husky
+
+# Planning and analysis artifacts
+plan.md
+docs/refactor.md
+docs/result-pattern-analysis.md

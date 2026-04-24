@@ -1,0 +1,100 @@
+{
+  "author": "Alfonso Segura",
+  "description": "Shared domain, application, and infrastructure building blocks (DDD seedwork).",
+  "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "@swc/core": "^1.15.11",
+    "@swc/jest": "^0.2.39",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.15.30",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-import-resolver-typescript": "^4.4.2",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jest": "^28.12.0",
+    "eslint-plugin-prettier": "^5.4.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "globals": "^16.2.0",
+    "husky": "^9.1.7",
+    "jest": "^29.7.0",
+    "lint-staged": "^15.5.0",
+    "prettier": "3.5.3",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.1"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./*": {
+      "default": "./dist/*.js",
+      "import": "./dist/*.js",
+      "types": "./dist/*.d.ts"
+    },
+    "./*/*": {
+      "default": "./dist/*/*.js",
+      "import": "./dist/*/*.js",
+      "types": "./dist/*/*.d.ts"
+    },
+    "./*/*/*": {
+      "default": "./dist/*/*/*.js",
+      "import": "./dist/*/*/*.js",
+      "types": "./dist/*/*/*.d.ts"
+    },
+    "./*/*/*/*": {
+      "default": "./dist/*/*/*/*.js",
+      "import": "./dist/*/*/*/*.js",
+      "types": "./dist/*/*/*/*.d.ts"
+    },
+    "./*/*/*/*/*": {
+      "default": "./dist/*/*/*/*/*.js",
+      "import": "./dist/*/*/*/*/*.js",
+      "types": "./dist/*/*/*/*/*.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "name": "@aseguragonzalez/seedwork",
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aseguragonzalez/vigilant-parakeet.git"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rimraf dist",
+    "format": "prettier --write .",
+    "format:check": "prettier --check . --log-level warn",
+    "lint": "eslint .",
+    "prepare": "husky",
+    "test": "jest",
+    "test:fast": "jest --runInBand",
+    "test:watch": "jest --watch",
+    "type:check": "tsc --noEmit --skipLibCheck"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "version": "0.0.6"
+}
