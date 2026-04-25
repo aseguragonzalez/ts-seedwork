@@ -29,6 +29,7 @@ jobs:
           node-version: 22
           cache: npm
           registry-url: https://npm.pkg.github.com
+          scope: '@aseguragonzalez'
           scope: "@aseguragonzalez"
 
       - name: Install dependencies
