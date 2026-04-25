@@ -40,7 +40,9 @@ describe('DomainEventFlushCommandBus (seedwork package)', () => {
     const inner: CommandBus = {
       dispatch: jest.fn().mockImplementation(async () => {
         // simulate a handler publishing events then throwing
-        await eventBus.publish([{ id: 'e1', eventName: 'TestEvent', payload: {}, occurredAt: new Date(), version: '1' }]);
+        await eventBus.publish([
+          { id: 'e1', eventName: 'TestEvent', payload: {}, occurredAt: new Date(), version: '1' },
+        ]);
         throw new Error('command failed');
       }),
     };
