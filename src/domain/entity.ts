@@ -14,6 +14,10 @@ export abstract class Entity<TId> {
       return true;
     }
 
+    if (this.constructor !== other.constructor) {
+      return false;
+    }
+
     const thisId = this.id as unknown;
     if (thisId !== null && thisId !== undefined && typeof (thisId as any).equals === 'function') {
       return (thisId as any).equals(other.id);

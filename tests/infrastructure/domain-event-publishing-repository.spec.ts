@@ -18,7 +18,7 @@ class TestEvent extends BaseDomainEvent<{ id: string }> {
 class TestAggregate extends AggregateRoot<TestId> {
   static create(id: TestId): TestAggregate {
     const event = TestEvent.create(id.value);
-    return new TestAggregate(id).withEvent(event) as TestAggregate;
+    return new TestAggregate(id, [event]);
   }
   static empty(id: TestId): TestAggregate {
     return new TestAggregate(id);

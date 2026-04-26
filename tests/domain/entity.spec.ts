@@ -38,6 +38,18 @@ describe('Entity (seedwork package)', () => {
     expect(a.equals({} as any)).toBe(false);
   });
 
+  it('should return false if compared to a different entity type with the same id', () => {
+    class OtherEntity extends Entity<string> {
+      constructor(id: string) {
+        super(id);
+      }
+    }
+    const a = new TestEntity('id-1', 'foo');
+    const b = new OtherEntity('id-1');
+
+    expect(a.equals(b)).toBe(false);
+  });
+
   it('should return true if compared to itself', () => {
     const a = new TestEntity('id-1', 'foo');
 

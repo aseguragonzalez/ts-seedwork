@@ -15,10 +15,6 @@ class TestAggregate extends AggregateRoot<string> {
   trigger(value: string): TestAggregate {
     return new TestAggregate(this.id, [...this.getDomainEvents(), new TestEvent(value)]);
   }
-
-  triggerViaHelper(value: string): this {
-    return this.withEvent(new TestEvent(value));
-  }
 }
 
 describe('AggregateRoot', () => {
@@ -39,31 +35,15 @@ describe('AggregateRoot', () => {
     expect(agg.getDomainEvents()).toHaveLength(1);
   });
 
-  it('withEvent returns a new instance, not the same reference', () => {
+  it('behavior methods return a new instance, not the same reference', () => {
     const original = new TestAggregate('id-1');
-    const updated = original.triggerViaHelper('foo');
+    const updated = original.trigger('foo');
     expect(original).not.toBe(updated);
   });
 
-  it('original instance is unaffected after withEvent', () => {
+  it('original instance is unaffected after behavior call', () => {
     const original = new TestAggregate('id-1');
-    original.triggerViaHelper('foo');
+    original.trigger('foo');
     expect(original.getDomainEvents()).toHaveLength(0);
-  });
-
-  it('withEvent clone preserves subclass identity', () => {
-    const agg = new TestAggregate('id-1').triggerViaHelper('foo');
-    expect(agg).toBeInstanceOf(TestAggregate);
-    expect(agg).toBeInstanceOf(AggregateRoot);
-  });
-
-  it('withEvent clone preserves aggregate id', () => {
-    const agg = new TestAggregate('id-42').triggerViaHelper('foo');
-    expect(agg.id).toBe('id-42');
-  });
-
-  it('withEvent accumulates events across multiple calls', () => {
-    const agg = new TestAggregate('id-1').triggerViaHelper('a').triggerViaHelper('b').triggerViaHelper('c');
-    expect(agg.getDomainEvents()).toHaveLength(3);
   });
 });
