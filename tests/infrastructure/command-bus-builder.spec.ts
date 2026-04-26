@@ -1,5 +1,5 @@
-import type { Command, CommandHandler } from '@seedwork';
-import { DomainError, ValidationErrors } from '@seedwork';
+import type { Command, CommandBus, CommandHandler } from '@seedwork';
+import { DomainError, Result, ValidationErrors } from '@seedwork';
 import type { UnitOfWork } from '@seedwork/domain/unit-of-work';
 import { CommandBusBuilder } from '@seedwork/infrastructure/command-bus-builder';
 
@@ -40,6 +40,19 @@ const makeUow = (): jest.Mocked<UnitOfWork> => ({
   commit: jest.fn().mockResolvedValue(undefined),
   rollback: jest.fn().mockResolvedValue(undefined),
 });
+
+const makeSpy = () => {
+  const calls: string[] = [];
+  const factory = (inner: CommandBus): CommandBus => ({
+    async dispatch(command: Command): Promise<Result> {
+      calls.push('before');
+      const result = await inner.dispatch(command);
+      calls.push('after');
+      return result;
+    },
+  });
+  return { factory, calls };
+};
 
 describe('CommandBusBuilder', () => {
   describe('base registry', () => {
@@ -93,16 +106,6 @@ describe('CommandBusBuilder', () => {
       await expect(bus.dispatch(new DoSomething(false))).rejects.toThrow(ValidationErrors);
       expect(handler.calls).toBe(0);
     });
-
-    it('calling withValidation twice is idempotent', async () => {
-      const handler = new DoSomethingHandler();
-      const bus = new CommandBusBuilder().register(DoSomething, handler).withValidation().withValidation().build();
-
-      const result = await bus.dispatch(new DoSomething(true));
-
-      expect(result.isOk()).toBe(true);
-      expect(handler.calls).toBe(1);
-    });
   });
 
   describe('withTransaction', () => {
@@ -139,7 +142,7 @@ describe('CommandBusBuilder', () => {
       expect(uow.commit).not.toHaveBeenCalled();
     });
 
-    it('last withTransaction call wins', async () => {
+    it('calling withTransaction twice nests two transaction layers', async () => {
       const uow1 = makeUow();
       const uow2 = makeUow();
       const bus = new CommandBusBuilder()
@@ -150,13 +153,15 @@ describe('CommandBusBuilder', () => {
 
       await bus.dispatch(new DoSomething());
 
+      expect(uow1.createSession).toHaveBeenCalledTimes(1);
       expect(uow2.createSession).toHaveBeenCalledTimes(1);
-      expect(uow1.createSession).not.toHaveBeenCalled();
+      expect(uow1.commit).toHaveBeenCalledTimes(1);
+      expect(uow2.commit).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('withValidation + withTransaction', () => {
-    it('validates before opening the transaction', async () => {
+    it('validates before opening the transaction when validation is declared first', async () => {
       const uow = makeUow();
       const handler = new DoSomethingHandler();
       const bus = new CommandBusBuilder().register(DoSomething, handler).withValidation().withTransaction(uow).build();
@@ -178,13 +183,60 @@ describe('CommandBusBuilder', () => {
       expect(handler.calls).toBe(1);
     });
 
-    it('composition order of builder calls does not affect stack order', async () => {
+    it('composition order of builder calls determines stack order', async () => {
       const uow = makeUow();
       const handler = new DoSomethingHandler();
+      // withTransaction declared first → outermost → session opens even when validation fails
       const bus = new CommandBusBuilder().register(DoSomething, handler).withTransaction(uow).withValidation().build();
 
       await expect(bus.dispatch(new DoSomething(false))).rejects.toThrow(ValidationErrors);
-      expect(uow.createSession).not.toHaveBeenCalled();
+      expect(uow.createSession).toHaveBeenCalledTimes(1);
+      expect(uow.rollback).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('use (custom steps)', () => {
+    it('custom step is invoked during dispatch', async () => {
+      const handler = new DoSomethingHandler();
+      const { factory, calls } = makeSpy();
+      const bus = new CommandBusBuilder().register(DoSomething, handler).use(factory).build();
+
+      await bus.dispatch(new DoSomething());
+
+      expect(calls).toEqual(['before', 'after']);
+      expect(handler.calls).toBe(1);
+    });
+
+    it('custom step declared after withValidation runs inside validation', async () => {
+      const handler = new DoSomethingHandler();
+      const { factory, calls } = makeSpy();
+      const bus = new CommandBusBuilder().register(DoSomething, handler).withValidation().use(factory).build();
+
+      await expect(bus.dispatch(new DoSomething(false))).rejects.toThrow(ValidationErrors);
+      expect(calls).toHaveLength(0);
+    });
+
+    it('multiple custom steps run in declaration order', async () => {
+      const order: number[] = [];
+      const makeOrderedSpy =
+        (id: number) =>
+        (inner: CommandBus): CommandBus => ({
+          async dispatch(command: Command): Promise<Result> {
+            order.push(id);
+            return inner.dispatch(command);
+          },
+        });
+
+      const bus = new CommandBusBuilder()
+        .register(DoSomething, new DoSomethingHandler())
+        .use(makeOrderedSpy(1))
+        .use(makeOrderedSpy(2))
+        .use(makeOrderedSpy(3))
+        .build();
+
+      await bus.dispatch(new DoSomething());
+
+      expect(order).toEqual([1, 2, 3]);
     });
   });
 });

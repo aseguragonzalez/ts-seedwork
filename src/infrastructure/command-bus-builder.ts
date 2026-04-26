@@ -6,8 +6,7 @@ import { ValidationCommandBus } from './validation-command-bus.js';
 
 export class CommandBusBuilder {
   private readonly registry = new RegistryCommandBus();
-  private unitOfWork: UnitOfWork | undefined;
-  private addValidation = false;
+  private readonly steps: Array<(inner: CommandBus) => CommandBus> = [];
 
   register<TCommand extends Command>(
     commandType: new (..._args: any[]) => TCommand,
@@ -18,22 +17,24 @@ export class CommandBusBuilder {
   }
 
   withValidation(): this {
-    this.addValidation = true;
+    this.steps.push(inner => new ValidationCommandBus(inner));
     return this;
   }
 
   withTransaction(unitOfWork: UnitOfWork): this {
-    this.unitOfWork = unitOfWork;
+    this.steps.push(inner => new TransactionalCommandBus(inner, unitOfWork));
+    return this;
+  }
+
+  use(factory: (inner: CommandBus) => CommandBus): this {
+    this.steps.push(factory);
     return this;
   }
 
   build(): CommandBus {
     let bus: CommandBus = this.registry;
-    if (this.unitOfWork) {
-      bus = new TransactionalCommandBus(bus, this.unitOfWork);
-    }
-    if (this.addValidation) {
-      bus = new ValidationCommandBus(bus);
+    for (const step of [...this.steps].reverse()) {
+      bus = step(bus);
     }
     return bus;
   }

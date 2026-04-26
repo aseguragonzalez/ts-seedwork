@@ -4,7 +4,7 @@ import { ValidationQueryBus } from './validation-query-bus.js';
 
 export class QueryBusBuilder {
   private readonly registry = new RegistryQueryBus();
-  private addValidation = false;
+  private readonly steps: Array<(inner: QueryBus) => QueryBus> = [];
 
   register<TQuery extends Query, TResult>(
     queryType: new (..._args: any[]) => TQuery,
@@ -15,14 +15,19 @@ export class QueryBusBuilder {
   }
 
   withValidation(): this {
-    this.addValidation = true;
+    this.steps.push(inner => new ValidationQueryBus(inner));
+    return this;
+  }
+
+  use(factory: (inner: QueryBus) => QueryBus): this {
+    this.steps.push(factory);
     return this;
   }
 
   build(): QueryBus {
     let bus: QueryBus = this.registry;
-    if (this.addValidation) {
-      bus = new ValidationQueryBus(bus);
+    for (const step of [...this.steps].reverse()) {
+      bus = step(bus);
     }
     return bus;
   }
