@@ -9,7 +9,10 @@ export class CommandBusBuilder {
   private unitOfWork: UnitOfWork | undefined;
   private addValidation = false;
 
-  register<T extends Command>(commandType: new (..._args: any[]) => T, handler: CommandHandler<T>): this {
+  register<TCommand extends Command>(
+    commandType: new (..._args: any[]) => TCommand,
+    handler: CommandHandler<TCommand>
+  ): this {
     this.registry.register(commandType, handler);
     return this;
   }

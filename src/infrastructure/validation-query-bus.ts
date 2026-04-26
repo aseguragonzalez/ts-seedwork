@@ -3,8 +3,8 @@ import type { Maybe, Query, QueryBus } from '../application/queries.js';
 export class ValidationQueryBus implements QueryBus {
   public constructor(private readonly inner: QueryBus) {}
 
-  public async ask<T>(query: Query): Promise<Maybe<T>> {
+  public async ask<TResult>(query: Query): Promise<Maybe<TResult>> {
     query.validate();
-    return this.inner.ask<T>(query);
+    return this.inner.ask<TResult>(query);
   }
 }

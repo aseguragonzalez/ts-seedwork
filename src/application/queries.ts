@@ -31,5 +31,5 @@ export interface QueryHandler<TQuery extends Query, TResult> {
 }
 
 export interface QueryBus {
-  ask<T>(query: Query): Promise<Maybe<T>>;
+  ask<TResult>(query: Query): Promise<Maybe<TResult>>;
 }
