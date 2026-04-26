@@ -32,7 +32,7 @@ export type { Repository } from './domain/repository.js';
 export type { UnitOfWork } from './domain/unit-of-work.js';
 
 // Domain — Errors
-export { DomainError, ValueError } from './domain/errors/index.js';
+export { DomainError } from './domain/domain-error.js';
 
 // Cross-cutting
 export type { Logger } from './logger.js';

@@ -10,14 +10,14 @@ type MoneyWithdrawnPayload = {
 
 export class MoneyWithdrawn extends BaseDomainEvent<MoneyWithdrawnPayload> {
   static create(accountId: string, amount: Money): MoneyWithdrawn {
-    return new MoneyWithdrawn(crypto.randomUUID(), {
+    return new MoneyWithdrawn({
       accountId,
       amount: amount.amount,
       currency: amount.currency,
     });
   }
 
-  private constructor(id: string, payload: MoneyWithdrawnPayload) {
-    super(id, payload);
+  private constructor(payload: MoneyWithdrawnPayload) {
+    super(payload);
   }
 }

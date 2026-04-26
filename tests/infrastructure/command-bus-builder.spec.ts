@@ -17,9 +17,15 @@ class DoSomethingHandler implements CommandHandler<DoSomething> {
   }
 }
 
+class RuleViolatedError extends DomainError {
+  constructor() {
+    super('rule violated', 'RULE_VIOLATED');
+  }
+}
+
 class DomainErrorHandler implements CommandHandler<DoSomething> {
   async execute(_command: DoSomething): Promise<void> {
-    throw new DomainError('rule violated', 'RULE_VIOLATED');
+    throw new RuleViolatedError();
   }
 }
 

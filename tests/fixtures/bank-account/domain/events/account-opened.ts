@@ -11,7 +11,7 @@ type AccountOpenedPayload = {
 
 export class AccountOpened extends BaseDomainEvent<AccountOpenedPayload> {
   static create(accountId: string, owner: string, initialBalance: Money): AccountOpened {
-    return new AccountOpened(crypto.randomUUID(), {
+    return new AccountOpened({
       accountId,
       owner,
       amount: initialBalance.amount,
@@ -19,7 +19,7 @@ export class AccountOpened extends BaseDomainEvent<AccountOpenedPayload> {
     });
   }
 
-  private constructor(id: string, payload: AccountOpenedPayload) {
-    super(id, payload);
+  private constructor(payload: AccountOpenedPayload) {
+    super(payload);
   }
 }

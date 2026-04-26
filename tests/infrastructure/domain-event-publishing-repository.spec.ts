@@ -8,10 +8,10 @@ class TestId {
 
 class TestEvent extends BaseDomainEvent<{ id: string }> {
   static create(id: string): TestEvent {
-    return new TestEvent(id, { id });
+    return new TestEvent({ id });
   }
-  private constructor(id: string, payload: { id: string }) {
-    super(id, payload);
+  private constructor(payload: { id: string }) {
+    super(payload);
   }
 }
 

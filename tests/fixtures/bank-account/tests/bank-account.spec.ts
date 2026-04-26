@@ -1,7 +1,12 @@
-import { DomainError, ValueError } from '@seedwork';
-
 import { BankAccount } from '../domain/bank-account.js';
 import { BankAccountId } from '../domain/bank-account-id.js';
+import {
+  CurrencyMismatchError,
+  InsufficientFundsError,
+  InvalidAmountError,
+  InvalidCurrencyError,
+  InvalidOwnerError,
+} from '../domain/errors.js';
 import { AccountOpened } from '../domain/events/account-opened.js';
 import { MoneyDeposited } from '../domain/events/money-deposited.js';
 import { MoneyWithdrawn } from '../domain/events/money-withdrawn.js';
@@ -27,12 +32,12 @@ describe('BankAccount', () => {
       expect((events[0] as AccountOpened).payload).toMatchObject({ accountId: 'acc-1', owner: 'Alice', amount: 100 });
     });
 
-    it('throws DomainError when owner is empty', () => {
-      expect(() => BankAccount.open(id, '', eur(100))).toThrow(DomainError);
+    it('throws InvalidOwnerError when owner is empty', () => {
+      expect(() => BankAccount.open(id, '', eur(100))).toThrow(InvalidOwnerError);
     });
 
-    it('throws ValueError when initial balance is negative', () => {
-      expect(() => BankAccount.open(id, 'Alice', eur(-1))).toThrow(ValueError);
+    it('throws InvalidAmountError when initial balance is negative', () => {
+      expect(() => BankAccount.open(id, 'Alice', eur(-1))).toThrow(InvalidAmountError);
     });
   });
 
@@ -85,9 +90,9 @@ describe('BankAccount', () => {
       expect((events[1] as MoneyWithdrawn).payload).toMatchObject({ accountId: 'acc-1', amount: 30 });
     });
 
-    it('throws DomainError when amount exceeds balance', () => {
+    it('throws InsufficientFundsError when amount exceeds balance', () => {
       const account = BankAccount.open(id, 'Alice', eur(100));
-      expect(() => account.withdraw(eur(200))).toThrow(DomainError);
+      expect(() => account.withdraw(eur(200))).toThrow(InsufficientFundsError);
     });
 
     it('allows withdrawing the full balance', () => {
@@ -97,16 +102,16 @@ describe('BankAccount', () => {
   });
 
   describe('Money', () => {
-    it('throws ValueError when amount is negative', () => {
-      expect(() => new Money(-1, 'EUR')).toThrow(ValueError);
+    it('throws InvalidAmountError when amount is negative', () => {
+      expect(() => new Money(-1, 'EUR')).toThrow(InvalidAmountError);
     });
 
-    it('throws ValueError when currency is empty', () => {
-      expect(() => new Money(100, '')).toThrow(ValueError);
+    it('throws InvalidCurrencyError when currency is empty', () => {
+      expect(() => new Money(100, '')).toThrow(InvalidCurrencyError);
     });
 
-    it('throws DomainError on currency mismatch', () => {
-      expect(() => eur(100).add(new Money(50, 'USD'))).toThrow(DomainError);
+    it('throws CurrencyMismatchError on currency mismatch', () => {
+      expect(() => eur(100).add(new Money(50, 'USD'))).toThrow(CurrencyMismatchError);
     });
 
     it('compares equal by value', () => {

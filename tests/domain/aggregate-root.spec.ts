@@ -3,7 +3,7 @@ import { BaseDomainEvent, DomainEvent } from '@seedwork/domain/domain-event';
 
 class TestEvent extends BaseDomainEvent<{ value: string }> {
   constructor(value: string) {
-    super(crypto.randomUUID(), { value });
+    super({ value });
   }
 }
 

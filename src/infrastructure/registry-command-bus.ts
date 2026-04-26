@@ -1,6 +1,6 @@
 import type { Command, CommandBus, CommandHandler } from '../application/commands.js';
 import { Result } from '../application/commands.js';
-import { DomainError } from '../domain/errors/index.js';
+import { DomainError } from '../domain/domain-error.js';
 
 type HandlerForCommand = CommandHandler<Command>;
 

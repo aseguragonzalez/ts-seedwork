@@ -1,4 +1,6 @@
-import { DomainError, ValueError, ValueObject } from '@seedwork';
+import { ValueObject } from '@seedwork';
+
+import { CurrencyMismatchError, InvalidAmountError, InvalidCurrencyError } from './errors.js';
 
 export class Money extends ValueObject {
   constructor(
@@ -6,8 +8,8 @@ export class Money extends ValueObject {
     public readonly currency: string
   ) {
     super();
-    if (amount < 0) throw new ValueError(`Money amount cannot be negative: ${amount}`);
-    if (!currency || currency.trim() === '') throw new ValueError('Money currency cannot be empty');
+    if (amount < 0) throw new InvalidAmountError(amount);
+    if (!currency || currency.trim() === '') throw new InvalidCurrencyError();
   }
 
   add(other: Money): Money {
@@ -27,7 +29,7 @@ export class Money extends ValueObject {
 
   private assertSameCurrency(other: Money): void {
     if (this.currency !== other.currency) {
-      throw new DomainError(`Currency mismatch: ${this.currency} vs ${other.currency}`, 'CURRENCY_MISMATCH');
+      throw new CurrencyMismatchError(this.currency, other.currency);
     }
   }
 }

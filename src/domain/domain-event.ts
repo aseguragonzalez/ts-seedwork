@@ -9,8 +9,8 @@ export interface TypedDomainEvent<TPayload extends Record<string, unknown>> exte
 
 export abstract class BaseDomainEvent<TPayload extends Record<string, unknown>> implements TypedDomainEvent<TPayload> {
   protected constructor(
-    public readonly id: string,
     public readonly payload: TPayload,
+    public readonly id: string = crypto.randomUUID(),
     public readonly occurredAt: Date = new Date()
   ) {}
 }
