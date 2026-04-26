@@ -23,7 +23,6 @@ export { AggregateRoot } from './domain/aggregate-root.js';
 export type { DomainEvent } from './domain/domain-event.js';
 export { BaseDomainEvent } from './domain/domain-event.js';
 export { Entity } from './domain/entity.js';
-export { TypedId } from './domain/typed-id.js';
 export { ValueObject } from './domain/value-object.js';
 
 // Domain — Repository

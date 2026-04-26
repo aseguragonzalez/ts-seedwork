@@ -1,9 +1,9 @@
 import { DomainEvent } from './domain-event.js';
 import { Entity } from './entity.js';
 
-export abstract class AggregateRoot<ID> extends Entity<ID> {
+export abstract class AggregateRoot<TId> extends Entity<TId> {
   protected constructor(
-    id: ID,
+    id: TId,
     private readonly domainEvents: ReadonlyArray<DomainEvent> = []
   ) {
     super(id);
