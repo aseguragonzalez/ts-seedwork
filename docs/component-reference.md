@@ -189,18 +189,18 @@ export interface BankAccountRepository extends Repository<BankAccountId, BankAcc
 
 ## Application layer
 
-### `Result<T, E>` / `Ok<T, E>` / `Err<T, E>`
+### `Result` / `ResultError`
 
-- **`Result<T, E>`** — discriminated union: either `Ok<T, E>` (success) or `Err<T, E>` (expected business failure).
-- **`ok(value)`** / **`err(error)`** — factory helpers.
-- **Guards:** `.isOk()` and `.isErr()` narrow the type, giving access to `.value` or `.error` respectively.
-- **Transforms:** `.map(fn)` applies `fn` to the value inside `Ok`; `.mapErr(fn)` applies `fn` to the error inside `Err`. Both are no-ops on the other variant.
+- **`Result`** — value class returned by `CommandBus.dispatch()`. Encapsulates success or expected failure.
+- **`ResultError`** — shape of each failure entry: `{ code: string; description: string }`.
+- **Factories:** `Result.ok()` for success; `Result.fail(errors)` for expected domain failures.
+- **Guards:** `.isOk()` returns `true` on success; `.isFail()` returns `true` on failure. `.errors` holds the failure list (empty array on success).
 - **Convention:** use `Result` for expected domain failures at the application boundary. Infrastructure failures (timeouts, connection drops) should still propagate as exceptions.
 
 ```typescript
-const result: Result<void, DomainError> = await bus.dispatch(command);
-if (result.isErr()) {
-  return res.status(mapCode(result.error.code)).json({ error: result.error.message });
+const result = await bus.dispatch(command);
+if (result.isFail()) {
+  return res.status(422).json({ errors: result.errors });
 }
 res.status(204).send();
 ```
@@ -209,28 +209,10 @@ res.status(204).send();
 
 ### `Command` / `CommandBus` / `CommandHandler`
 
-- **`Command`** — marker interface; implemented by command DTOs.
+- **`Command`** — marker interface; implemented by command DTOs. Requires `validate(): void` — the compiler enforces the method; calling it is opt-in via `ValidationCommandBus`.
 - **`CommandHandler<TCommand>`** — `execute(command: TCommand): Promise<void>`.
-- **`CommandBus`** — `dispatch(command: Command): Promise<void>`. The entry point for write operations.
+- **`CommandBus`** — `dispatch(command: Command): Promise<Result>`. The entry point for write operations.
 - **Usage:** One command class and one handler per write use case. Commands carry intent and primitives — no domain objects at the port boundary when avoidable.
-
-### `ResultCommandHandler` / `ResultCommandBus`
-
-- **`ResultCommandHandler<TCommand, TValue, TError>`** — `execute(command: TCommand): Promise<Result<TValue, TError>>`. Preferred over `CommandHandler` — makes the failure contract explicit.
-- **`ResultCommandBus`** — `dispatch<TValue, TError>(command: Command): Promise<Result<TValue, TError>>`.
-- **Usage:** Implement `ResultCommandHandler` in your handlers. Return `ok(undefined)` on success; `err(domainError)` for expected domain failures. Let unexpected exceptions (infra errors) propagate normally — the transactional decorator handles rollback.
-
-```typescript
-export class DepositMoneyHandler implements ResultCommandHandler<DepositMoneyCommand, void, DomainError> {
-  async execute(command: DepositMoneyCommand): Promise<Result<void, DomainError>> {
-    const account = await this.repository.getById(new BankAccountId(command.accountId));
-    if (!account) return err(new DomainError('Account not found', 'NOT_FOUND'));
-    const updated = account.deposit(new Money(command.amount, command.currency));
-    await this.repository.save(updated); // DomainEventPublishingRepository publishes events
-    return ok(undefined);
-  }
-}
-```
 
 ---
 
@@ -283,19 +265,6 @@ return res.json(result.value);
 
 ---
 
-### `RegistryResultCommandBus`
-
-- **Role:** `ResultCommandBus` implementation. Same registry pattern for `ResultCommandHandler` handlers.
-- **Usage:** `register(CommandClass, handler)`; `dispatch<TValue, TError>(command)`. Prefer this over `RegistryCommandBus` when handlers use the Result pattern.
-
-```typescript
-const commandBus = new RegistryResultCommandBus();
-commandBus.register(OpenAccountCommand, new OpenAccountHandler(repo, eventBus));
-const result = await commandBus.dispatch<void, DomainError>(new OpenAccountCommand(...));
-```
-
----
-
 ### `RegistryQueryBus`
 
 - **Role:** `QueryBus` implementation. Same registry pattern for queries.
@@ -318,17 +287,6 @@ const queryBus = new ValidationQueryBus(new RegistryQueryBus());
 
 - **Role:** `CommandBus` decorator. Wraps every dispatch in a `UnitOfWork` transaction: `createSession → dispatch → commit` on success, `rollback + rethrow` on error.
 - **Usage:** Pass any `CommandBus` and a `UnitOfWork` implementation. Must be the **outermost** decorator in the stack.
-
----
-
-### `TransactionalResultCommandBus`
-
-- **Role:** `ResultCommandBus` decorator. Same transaction semantics as `TransactionalCommandBus` but aware of `Result`: commits on `Ok`, rolls back on `Err`, rethrows on unexpected exception.
-- **Usage:** Wrap any `ResultCommandBus`.
-
-```typescript
-const bus = new TransactionalResultCommandBus(innerResultBus, unitOfWork);
-```
 
 ---
 
@@ -359,19 +317,20 @@ class DepositMoneyHandler implements CommandHandler<DepositMoneyCommand> {
 
 ### `CommandBusBuilder`
 
-- **Role:** Fluent builder for assembling a `CommandBus` stack. Handles handler registration and optional decorators in the correct fixed order: `Validation → Transaction → Registry`.
+- **Role:** Fluent builder for assembling a `CommandBus` stack.
 - **Methods:**
   - `.register(CommandClass, handler)` — wire a handler for a command type. Calling it multiple times with the same class overwrites the previous handler.
-  - `.withValidation()` — add `ValidationCommandBus` as the outermost layer; calls `command.validate()` before anything else.
-  - `.withTransaction(unitOfWork)` — add `TransactionalCommandBus`; wraps the registry in a `UnitOfWork` transaction. Calling it multiple times replaces the previous unit of work (last call wins).
+  - `.withValidation()` — add `ValidationCommandBus`.
+  - `.withTransaction(unitOfWork)` — add `TransactionalCommandBus`. Calling it multiple times nests multiple transaction layers.
+  - `.use(factory)` — add any custom `CommandBus` middleware.
   - `.build()` — return the assembled `CommandBus`.
-- **Usage:** The order of `.withValidation()` and `.withTransaction()` calls does not matter — the builder always places them in the correct stack order.
+- **Composition order:** declaration order determines the stack — the first declared step is outermost. To get `Validation → Transaction → Registry`, call `.withValidation()` before `.withTransaction()`.
 
 ```typescript
 const bus = new CommandBusBuilder()
   .register(OpenAccountCommand, new OpenAccountHandler(repo))
   .register(DepositMoneyCommand, new DepositMoneyHandler(repo))
-  .withValidation()
+  .withValidation() // outermost — validates before opening the transaction
   .withTransaction(unitOfWork)
   .build();
 ```
@@ -379,5 +338,5 @@ const bus = new CommandBusBuilder()
 With this stack, each dispatch:
 
 1. Validates the command (`withValidation`) — throws `ValidationErrors` before a transaction is opened
-2. Opens a transaction (`withTransaction`) — commits on ok, rolls back on fail or unexpected exception
+2. Opens a transaction (`withTransaction`) — commits on success, rolls back and rethrows on unexpected exception
 3. Executes the handler (`registry`) — `DomainError` maps to `Result.fail`; other exceptions propagate

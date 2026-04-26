@@ -34,16 +34,16 @@ This is a DDD seedwork library (`@aseguragonzalez/seedwork`) published to GitHub
 
 **`src/domain/`** — pure domain building blocks with no dependencies:
 
-- `Entity` / `AggregateRoot` — base classes; `AggregateRoot` is immutable: `withEvent(event)` returns a new shallow clone (via `Object.create + Object.assign`), `getDomainEvents()` is a pure read with no side effects
+- `Entity` / `AggregateRoot` — base classes; `AggregateRoot` stores domain events, `getDomainEvents()` is a pure read with no side effects
 - `ValueObject` — structural equality via deep comparison
-- `TypedId` — branded identity wrapper
 - `Repository<T>` / `UnitOfWork` — interfaces only (no implementations)
-- `DomainError` / `ValueError` — typed error hierarchy
+- `DomainError` — base for domain failures
 
 **`src/application/`** — CQRS contracts (interfaces only):
 
-- `Command` / `CommandBus` / `CommandHandler`
-- `Query` / `QueryBus` / `QueryHandler` / `QueryResponse`
+- `Command` / `CommandBus` / `CommandHandler`; `CommandBus.dispatch` returns `Result`
+- `Query` / `QueryBus` / `QueryHandler`; `QueryBus.ask` returns `Maybe<T>`
+- `Result` / `Maybe` — value types for command and query outcomes
 - `DomainEventPublisher` (outbound port) / `DomainEventHandler` (inbound port)
 
 **`src/infrastructure/`** — concrete bus implementations (decorators/adapters):
@@ -53,7 +53,7 @@ This is a DDD seedwork library (`@aseguragonzalez/seedwork`) published to GitHub
 - `TransactionalCommandBus` — decorator wrapping any `CommandBus` with `UnitOfWork` session/commit/rollback
 - `ValidationCommandBus` — decorator that calls `command.validate()` before dispatch
 - `DomainEventPublishingRepository` — decorator wrapping any `Repository`; calls `publisher.publish(entity.getDomainEvents())` after `save`
-- `CommandBusBuilder` — fluent builder that composes the above in the correct fixed order
+- `CommandBusBuilder` / `QueryBusBuilder` — fluent builders; declaration order determines stack (first declared = outermost)
 
 ### Typical composition
 
@@ -62,12 +62,12 @@ const repository = new DomainEventPublishingRepository(new BankAccountRepository
 
 const bus = new CommandBusBuilder()
   .register(OpenAccountCommand, new OpenAccountHandler(repository))
-  .withValidation()
+  .withValidation() // outermost — declared first
   .withTransaction(unitOfWork)
   .build();
 ```
 
-Stack order enforced by the builder: `Validation → Transaction → Registry`. Handler pattern: load aggregate → call behavior method (returns new immutable instance) → `save(updated)`. Event publishing is handled transparently by `DomainEventPublishingRepository` — handlers have no knowledge of the event bus.
+Handler pattern: load aggregate → call behavior method → `save(updated)`. Event publishing is handled transparently by `DomainEventPublishingRepository` — handlers have no knowledge of the event bus.
 
 Reference fixture: `tests/fixtures/bank-account/` — complete BankAccount example (domain, application, infrastructure, tests).
 

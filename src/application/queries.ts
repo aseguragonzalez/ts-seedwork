@@ -5,7 +5,7 @@ export class Maybe<T> {
     this.value = value;
   }
 
-  static just<T>(value: T): Maybe<T> {
+  static just<T>(value: NonNullable<T>): Maybe<NonNullable<T>> {
     return new Maybe(value);
   }
 
