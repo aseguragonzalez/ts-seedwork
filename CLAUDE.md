@@ -23,8 +23,7 @@ npx jest tests/domain/aggregate-root.spec.ts
 Full quality gate (lint + format + types + tests):
 
 ```bash
-make check           # local
-make docker-check    # Docker (no local Node required)
+npm run lint && npm run format:check && npm run type:check && npm test
 ```
 
 ## Architecture

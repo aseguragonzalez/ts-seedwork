@@ -1,9 +1,6 @@
 {
   "name": "ts-seedwork",
-  "build": {
-    "context": "..",
-    "dockerfile": "../Dockerfile"
-  },
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
   "customizations": {
     "vscode": {
       "extensions": [
