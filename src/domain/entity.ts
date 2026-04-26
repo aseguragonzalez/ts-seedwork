@@ -1,6 +1,6 @@
 export abstract class Entity<TId> {
   protected constructor(public readonly id: TId) {
-    if (!id) {
+    if (id === null || id === undefined) {
       throw new Error(`${this.constructor.name} requires an id`);
     }
   }

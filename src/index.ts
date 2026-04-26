@@ -1,11 +1,11 @@
 export const SEEDWORK_VERSION = '0.0.7';
 
 // Application — CQRS / Commands
-export type { Command, CommandBus, CommandHandler, ResultError } from './application/commands.js';
+export type { Command, CommandBus, CommandBusMiddleware, CommandHandler, ResultError } from './application/commands.js';
 export { Result } from './application/commands.js';
 
 // Application — CQRS / Queries
-export type { Query, QueryBus, QueryHandler } from './application/queries.js';
+export type { Query, QueryBus, QueryBusMiddleware, QueryHandler } from './application/queries.js';
 export { Maybe } from './application/queries.js';
 
 // Application — Validation

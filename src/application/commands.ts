@@ -41,3 +41,5 @@ export interface CommandHandler<TCommand extends Command> {
 export interface CommandBus {
   dispatch(command: Command): Promise<Result>;
 }
+
+export type CommandBusMiddleware = (inner: CommandBus) => CommandBus;

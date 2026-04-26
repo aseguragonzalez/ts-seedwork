@@ -33,3 +33,5 @@ export interface QueryHandler<TQuery extends Query, TResult> {
 export interface QueryBus {
   ask<TResult>(query: Query): Promise<Maybe<TResult>>;
 }
+
+export type QueryBusMiddleware = (inner: QueryBus) => QueryBus;
