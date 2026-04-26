@@ -1,9 +1,9 @@
 import { AggregateRoot } from '@seedwork/domain/aggregate-root';
 import { BaseDomainEvent, DomainEvent } from '@seedwork/domain/domain-event';
 
-class TestEvent extends BaseDomainEvent {
+class TestEvent extends BaseDomainEvent<{ value: string }> {
   constructor(value: string) {
-    super(crypto.randomUUID(), 'TestEvent', { value }, new Date(), '1.0.0');
+    super(crypto.randomUUID(), { value });
   }
 }
 

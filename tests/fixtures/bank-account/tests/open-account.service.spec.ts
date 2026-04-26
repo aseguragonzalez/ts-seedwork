@@ -2,6 +2,7 @@ import { DomainEvent, DomainEventPublisher, DomainEventPublishingRepository, Val
 
 import { OpenAccountRequest } from '../application/open-account-service/open-account.request.js';
 import { OpenAccountService } from '../application/open-account-service/open-account.service.js';
+import { AccountOpened } from '../domain/events/account-opened.js';
 import { InMemoryBankAccountRepository } from '../infrastructure/in-memory-bank-account.repository.js';
 
 describe('OpenAccountService', () => {
@@ -49,6 +50,6 @@ describe('OpenAccountService', () => {
     await service.execute(new OpenAccountRequest('Carol', 50, 'GBP'));
 
     expect(published).toHaveLength(1);
-    expect(published[0].eventName).toBe('AccountOpened');
+    expect(published[0]).toBeInstanceOf(AccountOpened);
   });
 });

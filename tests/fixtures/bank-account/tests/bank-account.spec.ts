@@ -24,7 +24,7 @@ describe('BankAccount', () => {
       const events = account.getDomainEvents();
       expect(events).toHaveLength(1);
       expect(events[0]).toBeInstanceOf(AccountOpened);
-      expect(events[0].payload).toMatchObject({ accountId: 'acc-1', owner: 'Alice', amount: 100 });
+      expect((events[0] as AccountOpened).payload).toMatchObject({ accountId: 'acc-1', owner: 'Alice', amount: 100 });
     });
 
     it('throws DomainError when owner is empty', () => {
@@ -54,7 +54,7 @@ describe('BankAccount', () => {
       const events = account.getDomainEvents();
       expect(events).toHaveLength(2);
       expect(events[1]).toBeInstanceOf(MoneyDeposited);
-      expect(events[1].payload).toMatchObject({ accountId: 'acc-1', amount: 50 });
+      expect((events[1] as MoneyDeposited).payload).toMatchObject({ accountId: 'acc-1', amount: 50 });
     });
 
     it('accumulates events across multiple operations', () => {
@@ -82,7 +82,7 @@ describe('BankAccount', () => {
       const events = account.getDomainEvents();
       expect(events).toHaveLength(2);
       expect(events[1]).toBeInstanceOf(MoneyWithdrawn);
-      expect(events[1].payload).toMatchObject({ accountId: 'acc-1', amount: 30 });
+      expect((events[1] as MoneyWithdrawn).payload).toMatchObject({ accountId: 'acc-1', amount: 30 });
     });
 
     it('throws DomainError when amount exceeds balance', () => {

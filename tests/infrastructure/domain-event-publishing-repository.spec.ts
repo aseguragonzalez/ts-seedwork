@@ -6,12 +6,12 @@ class TestId {
   constructor(public readonly value: string) {}
 }
 
-class TestEvent extends BaseDomainEvent {
+class TestEvent extends BaseDomainEvent<{ id: string }> {
   static create(id: string): TestEvent {
-    return new TestEvent(id, 'TestEvent', { id }, new Date(), '1.0.0');
+    return new TestEvent(id, { id });
   }
-  private constructor(id: string, eventName: string, payload: Record<string, any>, occurredAt: Date, version: string) {
-    super(id, eventName, payload, occurredAt, version);
+  private constructor(id: string, payload: { id: string }) {
+    super(id, payload);
   }
 }
 

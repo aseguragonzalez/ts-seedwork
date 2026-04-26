@@ -20,7 +20,7 @@ export type { DomainEventHandler, DomainEventPublisher } from './application/dom
 
 // Domain — Building blocks
 export { AggregateRoot } from './domain/aggregate-root.js';
-export type { DomainEvent } from './domain/domain-event.js';
+export type { DomainEvent, TypedDomainEvent } from './domain/domain-event.js';
 export { BaseDomainEvent } from './domain/domain-event.js';
 export { Entity } from './domain/entity.js';
 export { ValueObject } from './domain/value-object.js';
