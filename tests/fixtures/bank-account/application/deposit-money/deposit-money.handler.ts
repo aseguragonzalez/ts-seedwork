@@ -10,7 +10,7 @@ export class DepositMoneyHandler implements CommandHandler<DepositMoneyCommand> 
 
   async execute(command: DepositMoneyCommand): Promise<void> {
     const id = new BankAccountId(command.accountId);
-    const account = await this.repository.getById(id);
+    const account = await this.repository.findById(id);
     if (!account) {
       throw new DomainError(`Account ${command.accountId} not found`, 'NOT_FOUND');
     }

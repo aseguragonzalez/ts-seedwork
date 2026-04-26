@@ -41,7 +41,7 @@ describe('DepositMoneyHandler', () => {
     const result = await bus.dispatch(new DepositMoneyCommand('acc-1', 50, 'EUR'));
 
     expect(result.isOk()).toBe(true);
-    const account = await innerRepo.getById(new BankAccountId('acc-1'));
+    const account = await innerRepo.findById(new BankAccountId('acc-1'));
     expect(account?.balance.amount).toBe(150);
   });
 

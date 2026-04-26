@@ -36,7 +36,7 @@ describe('OpenAccountHandler', () => {
     const result = await bus.dispatch(new OpenAccountCommand('acc-1', 'Alice', 100, 'EUR'));
 
     expect(result.isOk()).toBe(true);
-    const saved = await innerRepo.getById(new BankAccountId('acc-1'));
+    const saved = await innerRepo.findById(new BankAccountId('acc-1'));
     expect(saved).not.toBeNull();
     expect(saved?.owner).toBe('Alice');
     expect(saved?.balance.amount).toBe(100);

@@ -5,7 +5,7 @@ import { BankAccountId } from '../domain/bank-account-id.js';
 export class InMemoryBankAccountRepository implements BankAccountRepository {
   private readonly store = new Map<string, BankAccount>();
 
-  async getById(id: BankAccountId): Promise<BankAccount | null> {
+  async findById(id: BankAccountId): Promise<BankAccount | null> {
     return this.store.get(id.value) ?? null;
   }
 
@@ -13,7 +13,7 @@ export class InMemoryBankAccountRepository implements BankAccountRepository {
     this.store.set(account.id.value, BankAccount.reconstitute(account.id, account.owner, account.balance));
   }
 
-  async delete(id: BankAccountId): Promise<void> {
+  async deleteById(id: BankAccountId): Promise<void> {
     this.store.delete(id.value);
   }
 }

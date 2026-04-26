@@ -10,7 +10,7 @@ export class GetBalanceHandler implements QueryHandler<GetBalanceQuery, BalanceD
 
   async execute(query: GetBalanceQuery): Promise<Maybe<BalanceData>> {
     const id = new BankAccountId(query.accountId);
-    const account = await this.repository.getById(id);
+    const account = await this.repository.findById(id);
     if (!account) return Maybe.nothing();
     return Maybe.just({
       accountId: account.id.value,

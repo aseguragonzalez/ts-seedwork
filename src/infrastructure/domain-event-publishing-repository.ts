@@ -10,8 +10,8 @@ export class DomainEventPublishingRepository<TId, TAggregate extends AggregateRo
     private readonly publisher: DomainEventPublisher
   ) {}
 
-  async getById(id: TId): Promise<TAggregate | null> {
-    return this.inner.getById(id);
+  async findById(id: TId): Promise<TAggregate | null> {
+    return this.inner.findById(id);
   }
 
   async save(entity: TAggregate): Promise<void> {
@@ -19,7 +19,7 @@ export class DomainEventPublishingRepository<TId, TAggregate extends AggregateRo
     await this.publisher.publish(entity.getDomainEvents());
   }
 
-  async delete(id: TId): Promise<void> {
-    await this.inner.delete(id);
+  async deleteById(id: TId): Promise<void> {
+    await this.inner.deleteById(id);
   }
 }

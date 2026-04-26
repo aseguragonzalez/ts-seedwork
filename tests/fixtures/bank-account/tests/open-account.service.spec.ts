@@ -27,7 +27,7 @@ describe('OpenAccountService', () => {
     const response = await service.execute(request);
 
     expect(response.accountId).toBeDefined();
-    const saved = await innerRepo.getById({ value: response.accountId } as any);
+    const saved = await innerRepo.findById({ value: response.accountId } as any);
     expect(saved?.owner).toBe('Alice');
     expect(saved?.balance.amount).toBe(100);
   });

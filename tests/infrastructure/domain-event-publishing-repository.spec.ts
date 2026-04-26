@@ -30,13 +30,13 @@ class TestAggregate extends AggregateRoot<TestId> {
 
 class InMemoryTestRepository implements Repository<TestId, TestAggregate> {
   private store = new Map<string, TestAggregate>();
-  async getById(id: TestId): Promise<TestAggregate | null> {
+  async findById(id: TestId): Promise<TestAggregate | null> {
     return this.store.get(id.value) ?? null;
   }
   async save(entity: TestAggregate): Promise<void> {
     this.store.set(entity.id.value, entity);
   }
-  async delete(id: TestId): Promise<void> {
+  async deleteById(id: TestId): Promise<void> {
     this.store.delete(id.value);
   }
 }
@@ -52,7 +52,7 @@ function makePublisher(): { publisher: DomainEventPublisher; captured: DomainEve
 }
 
 describe('DomainEventPublishingRepository', () => {
-  it('delegates getById to the inner repository', async () => {
+  it('delegates findById to the inner repository', async () => {
     const inner = new InMemoryTestRepository();
     const { publisher } = makePublisher();
     const repo = new DomainEventPublishingRepository(inner, publisher);
@@ -60,21 +60,21 @@ describe('DomainEventPublishingRepository', () => {
     const aggregate = TestAggregate.empty(id);
     await inner.save(aggregate);
 
-    const result = await repo.getById(id);
+    const result = await repo.findById(id);
 
     expect(result).toBe(aggregate);
   });
 
-  it('delegates delete to the inner repository', async () => {
+  it('delegates deleteById to the inner repository', async () => {
     const inner = new InMemoryTestRepository();
     const { publisher } = makePublisher();
     const repo = new DomainEventPublishingRepository(inner, publisher);
     const id = new TestId('1');
     await inner.save(TestAggregate.empty(id));
 
-    await repo.delete(id);
+    await repo.deleteById(id);
 
-    expect(await inner.getById(id)).toBeNull();
+    expect(await inner.findById(id)).toBeNull();
   });
 
   it('persists the aggregate before publishing events', async () => {
@@ -119,14 +119,14 @@ describe('DomainEventPublishingRepository', () => {
     expect(captured).toHaveLength(0);
   });
 
-  it('does not publish events on delete', async () => {
+  it('does not publish events on deleteById', async () => {
     const inner = new InMemoryTestRepository();
     const { publisher, captured } = makePublisher();
     const repo = new DomainEventPublishingRepository(inner, publisher);
     const id = new TestId('1');
     await inner.save(TestAggregate.create(id));
 
-    await repo.delete(id);
+    await repo.deleteById(id);
 
     expect(captured).toHaveLength(0);
   });
