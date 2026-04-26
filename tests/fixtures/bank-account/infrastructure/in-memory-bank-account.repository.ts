@@ -10,7 +10,7 @@ export class InMemoryBankAccountRepository implements BankAccountRepository {
   }
 
   async save(account: BankAccount): Promise<void> {
-    this.store.set(account.id.value, account);
+    this.store.set(account.id.value, BankAccount.reconstitute(account.id, account.owner, account.balance));
   }
 
   async delete(id: BankAccountId): Promise<void> {

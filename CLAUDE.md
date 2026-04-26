@@ -45,29 +45,30 @@ This is a DDD seedwork library (`@aseguragonzalez/seedwork`) published to GitHub
 
 - `Command` / `CommandBus` / `CommandHandler`
 - `Query` / `QueryBus` / `QueryHandler` / `QueryResponse`
-- `DomainEventBus` / `DomainEventHandler`
+- `DomainEventPublisher` (outbound port) / `DomainEventHandler` (inbound port)
 
 **`src/infrastructure/`** — concrete bus implementations (decorators/adapters):
 
 - `RegistryCommandBus` — maps command types to handlers via a registry
 - `RegistryQueryBus` — same pattern for queries
 - `TransactionalCommandBus` — decorator wrapping any `CommandBus` with `UnitOfWork` session/commit/rollback
-- `DeferredDomainEventBus` — buffers published events; `flush()` dispatches them
-- `DomainEventFlushCommandBus` — decorator that calls `eventBus.flush()` after each dispatch
+- `ValidationCommandBus` — decorator that calls `command.validate()` before dispatch
+- `DomainEventPublishingRepository` — decorator wrapping any `Repository`; calls `publisher.publish(entity.getDomainEvents())` after `save`
+- `CommandBusBuilder` — fluent builder that composes the above in the correct fixed order
 
 ### Typical composition
 
-```
-TransactionalCommandBus(
-  DomainEventFlushCommandBus(
-    RegistryCommandBus(...handlers),
-    deferredEventBus
-  ),
-  unitOfWork
-)
+```typescript
+const repository = new DomainEventPublishingRepository(new BankAccountRepositoryImpl(), publisher);
+
+const bus = new CommandBusBuilder()
+  .register(OpenAccountCommand, new OpenAccountHandler(repository))
+  .withValidation()
+  .withTransaction(unitOfWork)
+  .build();
 ```
 
-Handler pattern: load aggregate → call behavior method (returns new immutable instance) → `publish([...updated.getDomainEvents()])` → `save(updated)`. `DomainEventFlushCommandBus` calls `eventBus.flush()` after the handler; `TransactionalCommandBus` wraps everything in a UoW transaction.
+Stack order enforced by the builder: `Validation → Transaction → Registry`. Handler pattern: load aggregate → call behavior method (returns new immutable instance) → `save(updated)`. Event publishing is handled transparently by `DomainEventPublishingRepository` — handlers have no knowledge of the event bus.
 
 Reference fixture: `tests/fixtures/bank-account/` — complete BankAccount example (domain, application, infrastructure, tests).
 

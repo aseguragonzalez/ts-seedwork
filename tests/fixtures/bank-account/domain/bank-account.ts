@@ -16,6 +16,10 @@ export class BankAccount extends AggregateRoot<BankAccountId> {
     super(id, events);
   }
 
+  static reconstitute(id: BankAccountId, owner: string, balance: Money): BankAccount {
+    return new BankAccount(id, owner, balance);
+  }
+
   static open(id: BankAccountId, owner: string, initialBalance: Money): BankAccount {
     if (!owner || owner.trim() === '') {
       throw new DomainError('Owner cannot be empty', 'INVALID_OWNER');

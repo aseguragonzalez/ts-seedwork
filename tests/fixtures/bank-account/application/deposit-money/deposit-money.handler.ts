@@ -1,4 +1,4 @@
-import { CommandHandler, DomainError, DomainEventBus } from '@seedwork';
+import { CommandHandler, DomainError } from '@seedwork';
 
 import { BankAccountRepository } from '../../domain/bank-account.repository.js';
 import { BankAccountId } from '../../domain/bank-account-id.js';
@@ -6,10 +6,7 @@ import { Money } from '../../domain/money.js';
 import { DepositMoneyCommand } from './deposit-money.command.js';
 
 export class DepositMoneyHandler implements CommandHandler<DepositMoneyCommand> {
-  constructor(
-    private readonly repository: BankAccountRepository,
-    private readonly eventBus: DomainEventBus
-  ) {}
+  constructor(private readonly repository: BankAccountRepository) {}
 
   async execute(command: DepositMoneyCommand): Promise<void> {
     const id = new BankAccountId(command.accountId);
@@ -19,7 +16,6 @@ export class DepositMoneyHandler implements CommandHandler<DepositMoneyCommand> 
     }
     const amount = new Money(command.amount, command.currency);
     const updated = account.deposit(amount);
-    await this.eventBus.publish([...updated.getDomainEvents()]);
     await this.repository.save(updated);
   }
 }

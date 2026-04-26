@@ -59,12 +59,19 @@ The handler pattern after this design:
 
 ```typescript
 const account = await repository.getById(id);
-const updated = account.deposit(amount); // returns new instance with event
-await eventBus.publish([...updated.getDomainEvents()]);
-await repository.save(updated);
+const updated = account.deposit(amount); // returns new instance with accumulated event
+await repository.save(updated); // DomainEventPublishingRepository publishes events
 ```
 
 **Note on `withEvent` vs explicit constructor:** `withEvent` is useful when a behavior method only records an event without changing other state. When you also need to update domain properties (e.g. `balance`), thread the new values explicitly through the constructor as shown above.
+
+**Important — `reconstitute` pattern:** When loading an aggregate from persistence, always reconstitute it without domain events (events have already been published). Define a `static reconstitute(...)` factory that passes an empty events list. The repository's `save` implementation should store the reconstituted form. This ensures each command execution starts with a clean event slate and `getDomainEvents()` only returns events raised during the current operation.
+
+```typescript
+static reconstitute(id: BankAccountId, owner: string, balance: Money): BankAccount {
+  return new BankAccount(id, owner, balance); // no events — already published
+}
+```
 
 ---
 
@@ -182,6 +189,24 @@ export interface BankAccountRepository extends Repository<BankAccountId, BankAcc
 
 ## Application layer
 
+### `Result<T, E>` / `Ok<T, E>` / `Err<T, E>`
+
+- **`Result<T, E>`** — discriminated union: either `Ok<T, E>` (success) or `Err<T, E>` (expected business failure).
+- **`ok(value)`** / **`err(error)`** — factory helpers.
+- **Guards:** `.isOk()` and `.isErr()` narrow the type, giving access to `.value` or `.error` respectively.
+- **Transforms:** `.map(fn)` applies `fn` to the value inside `Ok`; `.mapErr(fn)` applies `fn` to the error inside `Err`. Both are no-ops on the other variant.
+- **Convention:** use `Result` for expected domain failures at the application boundary. Infrastructure failures (timeouts, connection drops) should still propagate as exceptions.
+
+```typescript
+const result: Result<void, DomainError> = await bus.dispatch(command);
+if (result.isErr()) {
+  return res.status(mapCode(result.error.code)).json({ error: result.error.message });
+}
+res.status(204).send();
+```
+
+---
+
 ### `Command` / `CommandBus` / `CommandHandler`
 
 - **`Command`** — marker interface; implemented by command DTOs.
@@ -189,23 +214,63 @@ export interface BankAccountRepository extends Repository<BankAccountId, BankAcc
 - **`CommandBus`** — `dispatch(command: Command): Promise<void>`. The entry point for write operations.
 - **Usage:** One command class and one handler per write use case. Commands carry intent and primitives — no domain objects at the port boundary when avoidable.
 
+### `ResultCommandHandler` / `ResultCommandBus`
+
+- **`ResultCommandHandler<TCommand, TValue, TError>`** — `execute(command: TCommand): Promise<Result<TValue, TError>>`. Preferred over `CommandHandler` — makes the failure contract explicit.
+- **`ResultCommandBus`** — `dispatch<TValue, TError>(command: Command): Promise<Result<TValue, TError>>`.
+- **Usage:** Implement `ResultCommandHandler` in your handlers. Return `ok(undefined)` on success; `err(domainError)` for expected domain failures. Let unexpected exceptions (infra errors) propagate normally — the transactional decorator handles rollback.
+
+```typescript
+export class DepositMoneyHandler implements ResultCommandHandler<DepositMoneyCommand, void, DomainError> {
+  async execute(command: DepositMoneyCommand): Promise<Result<void, DomainError>> {
+    const account = await this.repository.getById(new BankAccountId(command.accountId));
+    if (!account) return err(new DomainError('Account not found', 'NOT_FOUND'));
+    const updated = account.deposit(new Money(command.amount, command.currency));
+    await this.repository.save(updated); // DomainEventPublishingRepository publishes events
+    return ok(undefined);
+  }
+}
+```
+
 ---
 
-### `Query` / `QueryBus` / `QueryHandler` / `QueryResponse`
+### `Maybe<T>`
 
-- **`Query`** — marker interface for query DTOs.
-- **`QueryResponse<TProjection>`** — `{ data: TProjection }`. Subclass with a concrete `data` shape.
-- **`QueryHandler<TQuery, TResult>`** — `execute(query: TQuery): Promise<TResult>`.
-- **`QueryBus`** — `ask<TResult>(query: Query): Promise<TResult>`. Entry point for reads.
-- **Usage:** One query class and one handler per read use case. Handlers return `QueryResponse` subtypes — never domain entities.
+- **Role:** Single immutable class that models presence (`Maybe.just(value)`) or absence (`Maybe.nothing()`). Lives in `queries.ts` — it is the return type of the query bus.
+- **Guards:** `isJust()` narrows the type to `Maybe<T> & { readonly value: T }` via a type predicate, giving direct access to `.value` without `undefined`. `isNothing()` returns `boolean`.
+- **Accessor:** `.value` is `T | undefined` — access it safely inside an `isJust()` block.
+- **Convention:** use `Maybe.nothing()` for absence and for authorization failures (never reveal whether a resource exists to an unauthorized caller).
+
+```typescript
+const result = await queryBus.ask<BalanceData>(new GetBalanceQuery(id));
+if (result.isNothing()) return res.status(404).send();
+return res.json(result.value);
+```
 
 ---
 
-### `DomainEventBus` / `DomainEventHandler`
+### `Query` / `QueryBus` / `QueryHandler`
 
-- **`DomainEventBus`** — `publish(events: DomainEvent[]): Promise<void>`, `subscribe(eventType: string, handlers: DomainEventHandler[]): void`.
-- **`DomainEventHandler<TEvent>`** — `handle(event: TEvent): Promise<void>`.
-- **Usage:** Handlers subscribe by `eventName` string. The command handler publishes collected events; the bus dispatches them to subscribers on `flush()` (when using `DeferredDomainEventBus`).
+- **`Query`** — interface for query DTOs. Requires `validate(): void` — implement with a no-op body when no validation is needed. The compiler enforces the method exists; calling it is the developer's responsibility (opt-in via `ValidationQueryBus`).
+- **`QueryHandler<TQuery, T>`** — `execute(query: TQuery): Promise<Maybe<T>>`.
+- **`QueryBus`** — `ask<T>(query: Query): Promise<Maybe<T>>`. Entry point for reads.
+- **Usage:** One query class and one handler per read use case. Handlers return plain projection types — never domain entities.
+
+---
+
+### `DomainEventPublisher`
+
+- **Role:** Outbound port for publishing domain events. Defined in the application layer; implemented in infrastructure.
+- **Method:** `publish(events: ReadonlyArray<DomainEvent>): Promise<void>`.
+- **Usage:** Do **not** inject this into command handlers — event publishing should be transparent via `DomainEventPublishingRepository`. Inject it into infrastructure components (e.g. the repository decorator or a message broker adapter).
+
+---
+
+### `DomainEventHandler<TEvent>`
+
+- **Role:** Inbound port for reacting to domain events. Implemented in the application layer.
+- **Method:** `handle(event: TEvent): Promise<void>`.
+- **Usage:** One handler class per event type. Wiring (routing event names to handlers) is the responsibility of the consuming project's composition root — it is not prescribed by this package.
 
 ---
 
@@ -216,9 +281,17 @@ export interface BankAccountRepository extends Repository<BankAccountId, BankAcc
 - **Role:** `CommandBus` implementation. Routes commands to handlers via an in-process registry keyed by command constructor.
 - **Usage:** `register(CommandClass, handler)` to wire handlers; `dispatch(command)` to execute.
 
+---
+
+### `RegistryResultCommandBus`
+
+- **Role:** `ResultCommandBus` implementation. Same registry pattern for `ResultCommandHandler` handlers.
+- **Usage:** `register(CommandClass, handler)`; `dispatch<TValue, TError>(command)`. Prefer this over `RegistryCommandBus` when handlers use the Result pattern.
+
 ```typescript
-const commandBus = new RegistryCommandBus();
+const commandBus = new RegistryResultCommandBus();
 commandBus.register(OpenAccountCommand, new OpenAccountHandler(repo, eventBus));
+const result = await commandBus.dispatch<void, DomainError>(new OpenAccountCommand(...));
 ```
 
 ---
@@ -230,48 +303,81 @@ commandBus.register(OpenAccountCommand, new OpenAccountHandler(repo, eventBus));
 
 ---
 
+### `ValidationQueryBus`
+
+- **Role:** `QueryBus` decorator. Calls `query.validate()` before delegating.
+- **Usage:** Opt-in. Wrap the inner query bus when query DTOs carry a `validate()` method. `ValidationErrors` propagates as an exception — it is not caught.
+
+```typescript
+const queryBus = new ValidationQueryBus(new RegistryQueryBus());
+```
+
+---
+
 ### `TransactionalCommandBus`
 
 - **Role:** `CommandBus` decorator. Wraps every dispatch in a `UnitOfWork` transaction: `createSession → dispatch → commit` on success, `rollback + rethrow` on error.
 - **Usage:** Pass any `CommandBus` and a `UnitOfWork` implementation. Must be the **outermost** decorator in the stack.
 
+---
+
+### `TransactionalResultCommandBus`
+
+- **Role:** `ResultCommandBus` decorator. Same transaction semantics as `TransactionalCommandBus` but aware of `Result`: commits on `Ok`, rolls back on `Err`, rethrows on unexpected exception.
+- **Usage:** Wrap any `ResultCommandBus`.
+
 ```typescript
-const bus = new TransactionalCommandBus(innerBus, unitOfWork);
+const bus = new TransactionalResultCommandBus(innerResultBus, unitOfWork);
 ```
 
 ---
 
-### `DeferredDomainEventBus`
+### `DomainEventPublishingRepository<ID, T>`
 
-- **Role:** `DomainEventBus` implementation that buffers events on `publish()` and dispatches to subscribers only on `flush()`.
-- **Usage:** Subscribe handlers by `eventName`. The bus accumulates events during command handling; `flush()` dispatches all buffered events, then clears the buffer. Suitable for monolithic applications where event dispatch should happen after a successful commit and you do not need a message broker.
+- **Role:** `Repository` decorator that publishes domain events after every `save`. Keeps use-case handlers free of event-publishing logic.
+- **Usage:** Wrap any `Repository` implementation with a `DomainEventPublisher`. The decorator calls `publisher.publish(entity.getDomainEvents())` after the inner `save` completes. `delete` and `getById` delegate without side effects — if deletion has domain significance, model it as an aggregate operation and call `save` before (or instead of) `delete`.
 
 ```typescript
-const eventBus = new DeferredDomainEventBus();
-eventBus.subscribe('MoneyDeposited', [new UpdateBalanceProjectionHandler()]);
+const publisher: DomainEventPublisher = new MyMessageBrokerPublisher();
+const repository = new DomainEventPublishingRepository(new BankAccountRepositoryImpl(), publisher);
+
+// Handler stays clean — no event publishing, no knowledge of the bus:
+class DepositMoneyHandler implements CommandHandler<DepositMoneyCommand> {
+  constructor(private readonly repository: BankAccountRepository) {}
+
+  async execute(command: DepositMoneyCommand): Promise<void> {
+    const account = await this.repository.getById(new BankAccountId(command.accountId));
+    const updated = account.deposit(new Money(command.amount, command.currency));
+    await this.repository.save(updated); // decorator publishes events transparently
+  }
+}
 ```
+
+**Note:** The inner repository's `save` should persist the aggregate in its reconstituted form (no domain events). See the `reconstitute` pattern in the `AggregateRoot` section.
 
 ---
 
-### `DomainEventFlushCommandBus`
+### `CommandBusBuilder`
 
-- **Role:** `CommandBus` decorator. Calls `DeferredDomainEventBus.flush()` automatically after each successful `dispatch`.
-- **Usage:** Wrap the inner command bus. Must be placed **inside** `TransactionalCommandBus` so the flush (and event handlers) run within the transaction.
-
----
-
-### Canonical bus composition
+- **Role:** Fluent builder for assembling a `CommandBus` stack. Handles handler registration and optional decorators in the correct fixed order: `Validation → Transaction → Registry`.
+- **Methods:**
+  - `.register(CommandClass, handler)` — wire a handler for a command type. Calling it multiple times with the same class overwrites the previous handler.
+  - `.withValidation()` — add `ValidationCommandBus` as the outermost layer; calls `command.validate()` before anything else.
+  - `.withTransaction(unitOfWork)` — add `TransactionalCommandBus`; wraps the registry in a `UnitOfWork` transaction. Calling it multiple times replaces the previous unit of work (last call wins).
+  - `.build()` — return the assembled `CommandBus`.
+- **Usage:** The order of `.withValidation()` and `.withTransaction()` calls does not matter — the builder always places them in the correct stack order.
 
 ```typescript
-const commandBus = new TransactionalCommandBus(
-  new DomainEventFlushCommandBus(new RegistryCommandBus(/* register handlers here */), deferredEventBus),
-  unitOfWork
-);
+const bus = new CommandBusBuilder()
+  .register(OpenAccountCommand, new OpenAccountHandler(repo))
+  .register(DepositMoneyCommand, new DepositMoneyHandler(repo))
+  .withValidation()
+  .withTransaction(unitOfWork)
+  .build();
 ```
 
-With this stack, each command dispatch:
+With this stack, each dispatch:
 
-1. Opens a transaction (`TransactionalCommandBus`)
-2. Executes the handler (`RegistryCommandBus`)
-3. Flushes deferred domain events — event handlers run within the transaction (`DomainEventFlushCommandBus`)
-4. Commits on success, or rolls back and rethrows on error — no events are dispatched if the command fails
+1. Validates the command (`withValidation`) — throws `ValidationErrors` before a transaction is opened
+2. Opens a transaction (`withTransaction`) — commits on ok, rolls back on fail or unexpected exception
+3. Executes the handler (`registry`) — `DomainError` maps to `Result.fail`; other exceptions propagate
