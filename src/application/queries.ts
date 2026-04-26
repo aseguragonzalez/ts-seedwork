@@ -1,13 +1,35 @@
-export interface Query {}
+export class Maybe<T> {
+  readonly value: T | undefined;
 
-export interface QueryResponse<TProjection> {
-  data: TProjection;
+  private constructor(value: T | undefined) {
+    this.value = value;
+  }
+
+  static just<T>(value: T): Maybe<T> {
+    return new Maybe(value);
+  }
+
+  static nothing<T = never>(): Maybe<T> {
+    return new Maybe<T>(undefined);
+  }
+
+  isJust(): this is Maybe<T> & { readonly value: T } {
+    return this.value !== undefined;
+  }
+
+  isNothing(): boolean {
+    return this.value === undefined;
+  }
 }
 
-export interface QueryHandler<TQuery extends Query, TResult extends QueryResponse<unknown>> {
-  execute(query: TQuery): Promise<TResult>;
+export interface Query {
+  validate(): void;
+}
+
+export interface QueryHandler<TQuery extends Query, TResult> {
+  execute(query: TQuery): Promise<Maybe<TResult>>;
 }
 
 export interface QueryBus {
-  ask<TResult extends QueryResponse<unknown>>(query: Query): Promise<TResult>;
+  ask<T>(query: Query): Promise<Maybe<T>>;
 }

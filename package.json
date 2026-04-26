@@ -1,6 +1,46 @@
 {
-  "author": "Alfonso Segura",
+  "name": "@aseguragonzalez/seedwork",
+  "version": "0.0.7",
   "description": "Shared domain, application, and infrastructure building blocks (DDD seedwork).",
+  "author": "Alfonso Segura",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aseguragonzalez/vigilant-parakeet.git"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rimraf dist",
+    "format": "prettier --write .",
+    "format:check": "prettier --check . --log-level warn",
+    "lint": "eslint .",
+    "prepare": "husky",
+    "test": "jest",
+    "test:fast": "jest --runInBand",
+    "test:watch": "jest --watch",
+    "type:check": "tsc -p tsconfig.test.json --noEmit --skipLibCheck"
+  },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
     "@swc/core": "^1.15.11",
@@ -24,55 +64,6 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.33.1"
   },
-  "engines": {
-    "node": "22"
-  },
-  "exports": {
-    ".": {
-      "default": "./dist/index.js",
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./*": {
-      "default": "./dist/*.js",
-      "import": "./dist/*.js",
-      "types": "./dist/*.d.ts"
-    },
-    "./*/*": {
-      "default": "./dist/*/*.js",
-      "import": "./dist/*/*.js",
-      "types": "./dist/*/*.d.ts"
-    },
-    "./*/*/*": {
-      "default": "./dist/*/*/*.js",
-      "import": "./dist/*/*/*.js",
-      "types": "./dist/*/*/*.d.ts"
-    },
-    "./*/*/*/*": {
-      "default": "./dist/*/*/*/*.js",
-      "import": "./dist/*/*/*/*.js",
-      "types": "./dist/*/*/*/*.d.ts"
-    },
-    "./*/*/*/*/*": {
-      "default": "./dist/*/*/*/*/*.js",
-      "import": "./dist/*/*/*/*/*.js",
-      "types": "./dist/*/*/*/*/*.d.ts"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "license": "MIT",
-  "main": "dist/index.js",
-  "name": "@aseguragonzalez/seedwork",
-  "publishConfig": {
-    "access": "restricted",
-    "registry": "https://npm.pkg.github.com"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aseguragonzalez/vigilant-parakeet.git"
-  },
   "lint-staged": {
     "*.ts": [
       "eslint --fix",
@@ -81,20 +72,5 @@
     "*.{json,md,yml,yaml}": [
       "prettier --write"
     ]
-  },
-  "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "clean": "rimraf dist",
-    "format": "prettier --write .",
-    "format:check": "prettier --check . --log-level warn",
-    "lint": "eslint .",
-    "prepare": "husky",
-    "test": "jest",
-    "test:fast": "jest --runInBand",
-    "test:watch": "jest --watch",
-    "type:check": "tsc --noEmit --skipLibCheck"
-  },
-  "type": "module",
-  "types": "dist/index.d.ts",
-  "version": "0.0.6"
+  }
 }
