@@ -2,9 +2,10 @@ import type { DomainEventPublisher } from '../application/domain-events.js';
 import type { AggregateRoot } from '../domain/aggregate-root.js';
 import type { Repository } from '../domain/repository.js';
 
-export class DomainEventPublishingRepository<TId, TAggregate extends AggregateRoot<TId>>
-  implements Repository<TId, TAggregate>
-{
+export class DomainEventPublishingRepository<TId, TAggregate extends AggregateRoot<TId>> implements Repository<
+  TId,
+  TAggregate
+> {
   constructor(
     private readonly inner: Repository<TId, TAggregate>,
     private readonly publisher: DomainEventPublisher
