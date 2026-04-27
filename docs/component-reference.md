@@ -10,7 +10,7 @@ All components are exported from the package root (`@aseguragonzalez/seedwork`).
 
 - **Role:** Base class for DDD entities. Identity over attributes — two entities are equal when they share the same `id`, regardless of other properties.
 - **Usage:** Extend with your entity class. The `id` property is `public readonly`. Pass the id to `super(id)`. Throws if `id` is falsy.
-- **Key methods:** `equals(other: Entity<ID>): boolean` — delegates to `id.equals(otherId)` when `id` has an `equals` method (e.g. `TypedId`), falls back to `===` otherwise.
+- **Key methods:** `equals(other: Entity<ID>): boolean` — delegates to `id.equals(otherId)` when `id` has an `equals` method (e.g. a `ValueObject` ID), falls back to `===` otherwise.
 
 ```typescript
 class Transaction extends Entity<TransactionId> {
@@ -30,8 +30,7 @@ class Transaction extends Entity<TransactionId> {
 - **Role:** Root of an aggregate. Single entry point for state changes. Records domain events without side effects.
 - **Usage:** Extend with your aggregate class. Pass the `id` (and optionally an initial `events` array for reconstitution) to `super`. Behavior methods return a **new instance** — never mutate `this`. Call `getDomainEvents()` in the handler to retrieve accumulated events before saving.
 - **Key methods:**
-  - `withEvent(event: DomainEvent): this` — `protected`; returns a shallow clone of the aggregate with the event appended. Uses `Object.create(proto) + Object.assign` so the clone preserves the subclass prototype chain and all own properties.
-  - `getDomainEvents(): ReadonlyArray<DomainEvent>` — pure read; returns a copy of the current event list. Calling it twice returns the same events. Has no side effects.
+  - `getDomainEvents(): ReadonlyArray<TypedDomainEvent<Record<string, unknown>>>` — pure read; returns a copy of the current event list. Calling it twice returns the same events. Has no side effects.
 
 ```typescript
 class BankAccount extends AggregateRoot<BankAccountId> {
@@ -58,12 +57,10 @@ class BankAccount extends AggregateRoot<BankAccountId> {
 The handler pattern after this design:
 
 ```typescript
-const account = await repository.getById(id);
+const account = await repository.findById(id);
 const updated = account.deposit(amount); // returns new instance with accumulated event
 await repository.save(updated); // DomainEventPublishingRepository publishes events
 ```
-
-**Note on `withEvent` vs explicit constructor:** `withEvent` is useful when a behavior method only records an event without changing other state. When you also need to update domain properties (e.g. `balance`), thread the new values explicitly through the constructor as shown above.
 
 **Important — `reconstitute` pattern:** When loading an aggregate from persistence, always reconstitute it without domain events (events have already been published). Define a `static reconstitute(...)` factory that passes an empty events list. The repository's `save` implementation should store the reconstituted form. This ensures each command execution starts with a clean event slate and `getDomainEvents()` only returns events raised during the current operation.
 
@@ -78,7 +75,7 @@ static reconstitute(id: BankAccountId, owner: string, balance: Money): BankAccou
 ### `ValueObject`
 
 - **Role:** Immutable object defined entirely by its attributes. Two value objects are equal when all their properties are equal.
-- **Usage:** Extend and keep all properties `readonly`. Call `super()` from your constructor. Validate in the constructor and throw `ValueError` on invalid state.
+- **Usage:** Extend and keep all properties `readonly`. Call `super()` from your constructor. Validate in the constructor and throw a domain-specific error on invalid state.
 - **Supported property types in `equals`:** primitives (`===`), nested `ValueObject` (recursive), `Date` (by timestamp), arrays of the previous types.
 - **Key methods:** `equals(other: ValueObject): boolean`, `toString(): string` (auto-generated from property names and values).
 
@@ -89,54 +86,29 @@ class Money extends ValueObject {
     public readonly currency: string
   ) {
     super();
-    if (amount < 0) throw new ValueError('Amount cannot be negative');
+    if (amount < 0) throw new InvalidAmountError();
   }
 }
 ```
 
 ---
 
-### `TypedId`
+### `DomainEvent` / `TypedDomainEvent` / `BaseDomainEvent`
 
-- **Role:** Branded string identity wrapper. One subclass per entity or event type ensures you cannot accidentally pass a `UserId` where an `OrderId` is expected.
-- **Usage:** Extend and implement `validate()`. Add a `public constructor(value: string)` that calls `super(value)`. The `validate()` method is called inside `TypedId`'s constructor.
-- **Key methods:** `equals(other: TypedId): boolean` — checks both `constructor` identity and `value`; `toString(): string`.
-
-```typescript
-class BankAccountId extends TypedId {
-  public constructor(value: string) {
-    super(value);
-  }
-
-  protected validate(): void {
-    if (!this.value || this.value.trim() === '') {
-      throw new ValueError('BankAccountId cannot be empty');
-    }
-  }
-}
-```
-
----
-
-### `DomainEvent` / `BaseDomainEvent`
-
-- **`DomainEvent`** — interface: `id: string`, `eventName: string`, `payload: Record<string, any>`, `occurredAt: Date`, `version: string`.
-- **`BaseDomainEvent`** — abstract class implementing `DomainEvent`. All fields are `readonly`.
-- **Usage:** Extend `BaseDomainEvent` per event type. Use a `private constructor` and a `static create(...)` factory. Name events in past tense. Keep payload serializable (primitives only).
+- **`DomainEvent`** — base interface: `{ readonly id: string; readonly occurredAt: Date }`. Used as the base constraint for event handlers.
+- **`TypedDomainEvent<TPayload>`** — extends `DomainEvent` adding `readonly payload: TPayload`. Used by concrete handlers for compile-time typed access to event data.
+- **`BaseDomainEvent<TPayload>`** — abstract class implementing `TypedDomainEvent<TPayload>`. Constructor: `(payload: TPayload, id?: string, occurredAt?: Date)` — `id` defaults to `crypto.randomUUID()`, `occurredAt` defaults to `new Date()`.
+- **Usage:** Extend `BaseDomainEvent<TPayload>` per event type with a typed payload alias. Use a `private constructor` and a `static create(...)` factory. Name events in past tense. Keep payload serializable (primitives only).
 
 ```typescript
-class MoneyDeposited extends BaseDomainEvent {
+type MoneyDepositedPayload = { accountId: string; amount: number; currency: string };
+
+class MoneyDeposited extends BaseDomainEvent<MoneyDepositedPayload> {
   static create(accountId: string, amount: Money): MoneyDeposited {
-    return new MoneyDeposited(
-      crypto.randomUUID(),
-      'MoneyDeposited',
-      { accountId, amount: amount.amount, currency: amount.currency },
-      new Date(),
-      '1.0.0'
-    );
+    return new MoneyDeposited({ accountId, amount: amount.amount, currency: amount.currency });
   }
-  private constructor(id: string, eventName: string, payload: Record<string, any>, occurredAt: Date, version: string) {
-    super(id, eventName, payload, occurredAt, version);
+  private constructor(payload: MoneyDepositedPayload) {
+    super(payload);
   }
 }
 ```
@@ -146,7 +118,7 @@ class MoneyDeposited extends BaseDomainEvent {
 ### `Repository<ID, T>`
 
 - **Role:** Collection-like port for an aggregate. Defined in the domain layer; implemented in infrastructure.
-- **Methods:** `getById(id: ID): Promise<T | null>`, `save(entity: T): Promise<void>`, `delete(id: ID): Promise<void>`.
+- **Methods:** `findById(id: ID): Promise<T | null>`, `save(entity: T): Promise<void>`, `deleteById(id: ID): Promise<void>`.
 - **Usage:** Define a typed sub-interface per aggregate in the domain layer. Implement in infrastructure.
 
 ```typescript
@@ -166,16 +138,17 @@ export interface BankAccountRepository extends Repository<BankAccountId, BankAcc
 
 ### `DomainError`
 
-- **Role:** Base class for domain failures. Extends `Error`.
-- **Constructor:** `(message: string, code: string = 'DOMAIN_ERROR', name: string = 'DomainError')`.
-- **Usage:** Throw directly for general domain violations, or extend for named error types (e.g. `InsufficientFundsError`). Handlers and controllers should catch `DomainError` and map to an appropriate response.
+- **Role:** Abstract base class for domain failures. Extends `Error`. `abstract` — must be subclassed; instantiating it directly is not possible.
+- **Constructor:** `(message: string, code: string)` — `this.name` is set automatically to the subclass name via `this.constructor.name`.
+- **Usage:** Define one named subclass per domain failure. The class name carries the ubiquitous language (`InsufficientFundsError`); `code` carries the external contract identifier for API mapping.
 
----
-
-### `ValueError`
-
-- **Role:** Signals an invalid value object state. Extends `DomainError` with `code = 'VALUE_ERROR'` and `name = 'ValueError'`.
-- **Usage:** Throw from `ValueObject` or `TypedId` constructors when validation fails.
+```typescript
+class InsufficientFundsError extends DomainError {
+  constructor() {
+    super('Insufficient funds', 'INSUFFICIENT_FUNDS');
+  }
+}
+```
 
 ---
 
@@ -285,8 +258,8 @@ const queryBus = new ValidationQueryBus(new RegistryQueryBus());
 
 ### `TransactionalCommandBus`
 
-- **Role:** `CommandBus` decorator. Wraps every dispatch in a `UnitOfWork` transaction: `createSession → dispatch → commit` on success, `rollback + rethrow` on error.
-- **Usage:** Pass any `CommandBus` and a `UnitOfWork` implementation. Must be the **outermost** decorator in the stack.
+- **Role:** `CommandBus` decorator. Wraps every dispatch in a `UnitOfWork` transaction: `createSession → dispatch → commit` on success, `rollback + rethrow` on exception.
+- **Usage:** Pass any `CommandBus` and a `UnitOfWork` implementation. Typically placed inside `ValidationCommandBus` so validation errors do not open a transaction — use `CommandBusBuilder` to wire the stack in the right order.
 
 ---
 
@@ -304,7 +277,7 @@ class DepositMoneyHandler implements CommandHandler<DepositMoneyCommand> {
   constructor(private readonly repository: BankAccountRepository) {}
 
   async execute(command: DepositMoneyCommand): Promise<void> {
-    const account = await this.repository.getById(new BankAccountId(command.accountId));
+    const account = await this.repository.findById(new BankAccountId(command.accountId));
     const updated = account.deposit(new Money(command.amount, command.currency));
     await this.repository.save(updated); // decorator publishes events transparently
   }

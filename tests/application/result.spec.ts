@@ -1,4 +1,4 @@
-import { Result } from '@seedwork/application/commands';
+import { Result } from '@seedwork';
 
 describe('Result.ok()', () => {
   it('constructs an ok result', () => {

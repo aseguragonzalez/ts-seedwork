@@ -49,6 +49,7 @@ describe('ValidationQueryBus', () => {
     const inner: QueryBus = { ask: jest.fn() };
     const bus = new ValidationQueryBus(inner);
 
+    expect.assertions(2);
     try {
       await bus.ask(new QueryWithInvalidData());
     } catch (e) {

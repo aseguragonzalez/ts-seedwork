@@ -1,4 +1,4 @@
-import { Maybe } from '@seedwork/application/queries';
+import { Maybe } from '@seedwork';
 
 describe('Maybe.just()', () => {
   it('constructs a present value', () => {

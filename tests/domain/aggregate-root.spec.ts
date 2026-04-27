@@ -1,5 +1,5 @@
 import { AggregateRoot } from '@seedwork/domain/aggregate-root';
-import { BaseDomainEvent, DomainEvent } from '@seedwork/domain/domain-event';
+import { BaseDomainEvent, TypedDomainEvent } from '@seedwork/domain/domain-event';
 
 class TestEvent extends BaseDomainEvent<{ value: string }> {
   constructor(value: string) {
@@ -8,7 +8,7 @@ class TestEvent extends BaseDomainEvent<{ value: string }> {
 }
 
 class TestAggregate extends AggregateRoot<string> {
-  constructor(id: string, events: ReadonlyArray<DomainEvent> = []) {
+  constructor(id: string, events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = []) {
     super(id, events);
   }
 
@@ -31,7 +31,7 @@ describe('AggregateRoot', () => {
 
   it('getDomainEvents returns a copy — external mutations do not affect internal state', () => {
     const agg = new TestAggregate('id-1').trigger('foo');
-    (agg.getDomainEvents() as DomainEvent[]).push(new TestEvent('injected'));
+    (agg.getDomainEvents() as TypedDomainEvent<Record<string, unknown>>[]).push(new TestEvent('injected'));
     expect(agg.getDomainEvents()).toHaveLength(1);
   });
 

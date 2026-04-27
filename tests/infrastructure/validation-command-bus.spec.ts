@@ -36,6 +36,7 @@ describe('ValidationCommandBus', () => {
     const inner: CommandBus = { dispatch: jest.fn() };
     const bus = new ValidationCommandBus(inner);
 
+    expect.assertions(2);
     try {
       await bus.dispatch(new InvalidCommand());
     } catch (e) {

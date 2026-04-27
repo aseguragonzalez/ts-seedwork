@@ -1,4 +1,4 @@
-import { AggregateRoot, DomainEvent } from '@seedwork';
+import { AggregateRoot, TypedDomainEvent } from '@seedwork';
 
 import { BankAccountId } from './bank-account-id.js';
 import { InsufficientFundsError, InvalidOwnerError } from './errors.js';
@@ -12,7 +12,7 @@ export class BankAccount extends AggregateRoot<BankAccountId> {
     id: BankAccountId,
     public readonly owner: string,
     public readonly balance: Money,
-    events: ReadonlyArray<DomainEvent> = []
+    events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = []
   ) {
     super(id, events);
   }

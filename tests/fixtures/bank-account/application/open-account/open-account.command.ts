@@ -1,4 +1,4 @@
-import { Command, ValidationErrors } from '@seedwork';
+import { Command, ValidationErrorDetail, ValidationErrors } from '@seedwork';
 
 export class OpenAccountCommand implements Command {
   constructor(
@@ -9,7 +9,7 @@ export class OpenAccountCommand implements Command {
   ) {}
 
   validate(): void {
-    const errors = [];
+    const errors: ValidationErrorDetail[] = [];
     if (!this.accountId) errors.push({ code: 'INVALID_ACCOUNT_ID', message: 'Account ID is required' });
     if (!this.owner) errors.push({ code: 'INVALID_OWNER', message: 'Owner is required' });
     if (this.initialAmount <= 0) errors.push({ code: 'INVALID_AMOUNT', message: 'Initial amount must be positive' });

@@ -1,4 +1,4 @@
-import { DomainEvent, DomainEventPublisher, DomainEventPublishingRepository, Repository } from '@seedwork';
+import { DomainEventPublisher, DomainEventPublishingRepository, Repository, TypedDomainEvent } from '@seedwork';
 import { AggregateRoot } from '@seedwork/domain/aggregate-root';
 import { BaseDomainEvent } from '@seedwork/domain/domain-event';
 
@@ -23,7 +23,7 @@ class TestAggregate extends AggregateRoot<TestId> {
   static empty(id: TestId): TestAggregate {
     return new TestAggregate(id);
   }
-  private constructor(id: TestId, events: ReadonlyArray<DomainEvent> = []) {
+  private constructor(id: TestId, events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = []) {
     super(id, events);
   }
 }
@@ -41,8 +41,8 @@ class InMemoryTestRepository implements Repository<TestId, TestAggregate> {
   }
 }
 
-function makePublisher(): { publisher: DomainEventPublisher; captured: DomainEvent[] } {
-  const captured: DomainEvent[] = [];
+function makePublisher(): { publisher: DomainEventPublisher; captured: TypedDomainEvent<Record<string, unknown>>[] } {
+  const captured: TypedDomainEvent<Record<string, unknown>>[] = [];
   const publisher: DomainEventPublisher = {
     publish: async events => {
       captured.push(...events);
