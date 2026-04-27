@@ -1,6 +1,7 @@
-import { AggregateRoot, DomainError, DomainEvent } from '@seedwork';
+import { AggregateRoot, TypedDomainEvent } from '@seedwork';
 
 import { BankAccountId } from './bank-account-id.js';
+import { InsufficientFundsError, InvalidOwnerError } from './errors.js';
 import { AccountOpened } from './events/account-opened.js';
 import { MoneyDeposited } from './events/money-deposited.js';
 import { MoneyWithdrawn } from './events/money-withdrawn.js';
@@ -11,14 +12,18 @@ export class BankAccount extends AggregateRoot<BankAccountId> {
     id: BankAccountId,
     public readonly owner: string,
     public readonly balance: Money,
-    events: ReadonlyArray<DomainEvent> = []
+    events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = []
   ) {
     super(id, events);
   }
 
+  static reconstitute(id: BankAccountId, owner: string, balance: Money): BankAccount {
+    return new BankAccount(id, owner, balance);
+  }
+
   static open(id: BankAccountId, owner: string, initialBalance: Money): BankAccount {
     if (!owner || owner.trim() === '') {
-      throw new DomainError('Owner cannot be empty', 'INVALID_OWNER');
+      throw new InvalidOwnerError();
     }
     const event = AccountOpened.create(id.value, owner, initialBalance);
     return new BankAccount(id, owner, initialBalance, [event]);
@@ -31,7 +36,7 @@ export class BankAccount extends AggregateRoot<BankAccountId> {
 
   withdraw(amount: Money): BankAccount {
     if (amount.isGreaterThan(this.balance)) {
-      throw new DomainError('Insufficient funds', 'INSUFFICIENT_FUNDS');
+      throw new InsufficientFundsError();
     }
     const event = MoneyWithdrawn.create(this.id.value, amount);
     return new BankAccount(this.id, this.owner, this.balance.subtract(amount), [...this.getDomainEvents(), event]);

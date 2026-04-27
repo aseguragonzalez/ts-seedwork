@@ -1,8 +1,10 @@
-import { Command, CommandBus } from '@seedwork/application/commands';
+import { Command, CommandBus, Result } from '@seedwork/application/commands';
 import { UnitOfWork } from '@seedwork/domain/unit-of-work';
 import { TransactionalCommandBus } from '@seedwork/infrastructure/transactional-command-bus';
 
-class DoSomething implements Command {}
+class DoSomething implements Command {
+  validate(): void {}
+}
 
 describe('TransactionalCommandBus (seedwork package)', () => {
   const makeUow = (): jest.Mocked<UnitOfWork> => ({
@@ -11,8 +13,8 @@ describe('TransactionalCommandBus (seedwork package)', () => {
     rollback: jest.fn().mockResolvedValue(undefined),
   });
 
-  const makeInner = (impl?: () => Promise<void>): CommandBus => ({
-    dispatch: jest.fn(impl ?? (() => Promise.resolve())),
+  const makeInner = (impl?: () => Promise<Result>): CommandBus => ({
+    dispatch: jest.fn(impl ?? (() => Promise.resolve(Result.ok()))),
   });
 
   it('should open session, dispatch, then commit on success', async () => {

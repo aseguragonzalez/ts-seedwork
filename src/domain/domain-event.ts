@@ -1,17 +1,16 @@
 export interface DomainEvent {
-  id: string;
-  eventName: string;
-  payload: Record<string, any>;
-  occurredAt: Date;
-  version: string;
+  readonly id: string;
+  readonly occurredAt: Date;
 }
 
-export abstract class BaseDomainEvent implements DomainEvent {
+export interface TypedDomainEvent<TPayload extends Record<string, unknown>> extends DomainEvent {
+  readonly payload: TPayload;
+}
+
+export abstract class BaseDomainEvent<TPayload extends Record<string, unknown>> implements TypedDomainEvent<TPayload> {
   protected constructor(
-    public readonly id: string,
-    public readonly eventName: string,
-    public readonly payload: Record<string, any>,
-    public readonly occurredAt: Date,
-    public readonly version: string
+    public readonly payload: TPayload,
+    public readonly id: string = crypto.randomUUID(),
+    public readonly occurredAt: Date = new Date()
   ) {}
 }

@@ -1,13 +1,12 @@
 {
-  "compilerOptions": {
-    "types": [
-      "jest",
-      "node"
-    ]
-  },
   "extends": "./tsconfig.json",
-  "include": [
-    "src/**/*",
-    "tests/**/*"
-  ]
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@seedwork": ["src/index.js"],
+      "@seedwork/*": ["src/*.js"]
+    },
+    "types": ["jest", "node"]
+  },
+  "include": ["src/**/*", "tests/**/*"]
 }

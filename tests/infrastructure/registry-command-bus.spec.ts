@@ -3,6 +3,7 @@ import { RegistryCommandBus } from '@seedwork/infrastructure/registry-command-bu
 
 class CreateUserCommand implements Command {
   constructor(public readonly name: string) {}
+  validate(): void {}
 }
 
 class CreateUserHandler implements CommandHandler<CreateUserCommand> {

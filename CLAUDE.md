@@ -23,8 +23,7 @@ npx jest tests/domain/aggregate-root.spec.ts
 Full quality gate (lint + format + types + tests):
 
 ```bash
-make check           # local
-make docker-check    # Docker (no local Node required)
+npm run lint && npm run format:check && npm run type:check && npm test
 ```
 
 ## Architecture
@@ -35,39 +34,40 @@ This is a DDD seedwork library (`@aseguragonzalez/seedwork`) published to GitHub
 
 **`src/domain/`** — pure domain building blocks with no dependencies:
 
-- `Entity` / `AggregateRoot` — base classes; `AggregateRoot` is immutable: `withEvent(event)` returns a new shallow clone (via `Object.create + Object.assign`), `getDomainEvents()` is a pure read with no side effects
+- `Entity` / `AggregateRoot` — base classes; `AggregateRoot` stores domain events, `getDomainEvents()` is a pure read with no side effects
 - `ValueObject` — structural equality via deep comparison
-- `TypedId` — branded identity wrapper
 - `Repository<T>` / `UnitOfWork` — interfaces only (no implementations)
-- `DomainError` / `ValueError` — typed error hierarchy
+- `DomainError` — base for domain failures
 
 **`src/application/`** — CQRS contracts (interfaces only):
 
-- `Command` / `CommandBus` / `CommandHandler`
-- `Query` / `QueryBus` / `QueryHandler` / `QueryResponse`
-- `DomainEventBus` / `DomainEventHandler`
+- `Command` / `CommandBus` / `CommandHandler`; `CommandBus.dispatch` returns `Result`
+- `Query` / `QueryBus` / `QueryHandler`; `QueryBus.ask` returns `Maybe<T>`
+- `Result` / `Maybe` — value types for command and query outcomes
+- `DomainEventPublisher` (outbound port) / `DomainEventHandler` (inbound port)
 
 **`src/infrastructure/`** — concrete bus implementations (decorators/adapters):
 
 - `RegistryCommandBus` — maps command types to handlers via a registry
 - `RegistryQueryBus` — same pattern for queries
 - `TransactionalCommandBus` — decorator wrapping any `CommandBus` with `UnitOfWork` session/commit/rollback
-- `DeferredDomainEventBus` — buffers published events; `flush()` dispatches them
-- `DomainEventFlushCommandBus` — decorator that calls `eventBus.flush()` after each dispatch
+- `ValidationCommandBus` — decorator that calls `command.validate()` before dispatch
+- `DomainEventPublishingRepository` — decorator wrapping any `Repository`; calls `publisher.publish(entity.getDomainEvents())` after `save`
+- `CommandBusBuilder` / `QueryBusBuilder` — fluent builders; declaration order determines stack (first declared = outermost)
 
 ### Typical composition
 
-```
-TransactionalCommandBus(
-  DomainEventFlushCommandBus(
-    RegistryCommandBus(...handlers),
-    deferredEventBus
-  ),
-  unitOfWork
-)
+```typescript
+const repository = new DomainEventPublishingRepository(new BankAccountRepositoryImpl(), publisher);
+
+const bus = new CommandBusBuilder()
+  .register(OpenAccountCommand, new OpenAccountHandler(repository))
+  .withValidation() // outermost — declared first
+  .withTransaction(unitOfWork)
+  .build();
 ```
 
-Handler pattern: load aggregate → call behavior method (returns new immutable instance) → `publish([...updated.getDomainEvents()])` → `save(updated)`. `DomainEventFlushCommandBus` calls `eventBus.flush()` after the handler; `TransactionalCommandBus` wraps everything in a UoW transaction.
+Handler pattern: load aggregate → call behavior method → `save(updated)`. Event publishing is handled transparently by `DomainEventPublishingRepository` — handlers have no knowledge of the event bus.
 
 Reference fixture: `tests/fixtures/bank-account/` — complete BankAccount example (domain, application, infrastructure, tests).
 

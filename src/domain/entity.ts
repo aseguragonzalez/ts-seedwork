@@ -1,17 +1,21 @@
-export abstract class Entity<ID> {
-  protected constructor(public readonly id: ID) {
-    if (!id) {
+export abstract class Entity<TId> {
+  protected constructor(public readonly id: TId) {
+    if (id === null || id === undefined) {
       throw new Error(`${this.constructor.name} requires an id`);
     }
   }
 
-  public equals(other: Entity<ID>): boolean {
+  public equals(other: Entity<TId>): boolean {
     if (!(other instanceof Entity)) {
       return false;
     }
 
     if (this === other) {
       return true;
+    }
+
+    if (this.constructor !== other.constructor) {
+      return false;
     }
 
     const thisId = this.id as unknown;

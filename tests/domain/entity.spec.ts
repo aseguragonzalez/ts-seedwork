@@ -4,16 +4,31 @@ describe('Entity (seedwork package)', () => {
   class TestEntity extends Entity<string> {
     constructor(
       id: string,
-
       public readonly name: string
     ) {
       super(id);
     }
   }
 
-  it('should throw if id is missing', () => {
+  class NumericEntity extends Entity<number> {
+    constructor(id: number) {
+      super(id);
+    }
+  }
+
+  it('throws if id is undefined', () => {
     // @ts-expect-error
     expect(() => new TestEntity(undefined, 'foo')).toThrow('TestEntity requires an id');
+  });
+
+  it('throws if id is null', () => {
+    // @ts-expect-error
+    expect(() => new TestEntity(null, 'foo')).toThrow('TestEntity requires an id');
+  });
+
+  it('accepts 0 as a valid numeric id', () => {
+    const entity = new NumericEntity(0);
+    expect(entity.id).toBe(0);
   });
 
   it('should assign id and properties', () => {
@@ -36,6 +51,18 @@ describe('Entity (seedwork package)', () => {
     const a = new TestEntity('id-1', 'foo');
 
     expect(a.equals({} as any)).toBe(false);
+  });
+
+  it('should return false if compared to a different entity type with the same id', () => {
+    class OtherEntity extends Entity<string> {
+      constructor(id: string) {
+        super(id);
+      }
+    }
+    const a = new TestEntity('id-1', 'foo');
+    const b = new OtherEntity('id-1');
+
+    expect(a.equals(b)).toBe(false);
   });
 
   it('should return true if compared to itself', () => {
