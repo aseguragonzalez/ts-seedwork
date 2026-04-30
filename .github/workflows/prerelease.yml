@@ -11,6 +11,7 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write
 
 jobs:
   quality:
@@ -22,7 +23,10 @@ jobs:
     name: Publish (${{ inputs.preid }})
     runs-on: ubuntu-latest
     needs: quality
-
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -45,13 +49,18 @@ jobs:
         run: |
           TAG=$(echo "${{ inputs.preid }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g;s/^-//;s/-$//')
           BASE=$(node -p "require('./package.json').version" | sed 's/-.*//')
-          VERSION="${BASE}-${TAG}.${GITHUB_RUN_NUMBER}"
+          VERSION="${BASE}-${TAG}.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
           npm version "${VERSION}" --no-git-tag-version
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Publish to npm
-        run: npm publish --tag ${{ steps.pre.outputs.tag }}
+        run: |
+          if npm view "@aseguragonzalez/ts-seedwork@${{ steps.pre.outputs.version }}" > /dev/null 2>&1; then
+            echo "Version already published to npm, skipping."
+          else
+            npm publish --tag ${{ steps.pre.outputs.tag }}
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -63,7 +72,12 @@ jobs:
           scope: '@aseguragonzalez'
 
       - name: Publish to GitHub Packages
-        run: npm publish --tag ${{ steps.pre.outputs.tag }}
+        run: |
+          if npm view "@aseguragonzalez/ts-seedwork@${{ steps.pre.outputs.version }}" --registry=https://npm.pkg.github.com > /dev/null 2>&1; then
+            echo "Version already published to GitHub Packages, skipping."
+          else
+            npm publish --tag ${{ steps.pre.outputs.tag }}
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
