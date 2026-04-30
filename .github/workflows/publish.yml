@@ -20,8 +20,6 @@ jobs:
   # Required status check: install dependencies and run the test suite
   test:
     name: test
-    permissions:
-      contents: read
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -46,8 +44,6 @@ jobs:
   build:
     name: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     permissions:
       contents: read
 
