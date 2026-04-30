@@ -1,6 +1,8 @@
 export default {
-  // Keep tests in TypeScript but transpile with a fast transformer (@swc/jest).
-  // Full type-checking is handled separately via the `type:check` script.
+  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts'],
+  coverageThreshold: {
+    global: { branches: 80, functions: 95, lines: 90, statements: 90 },
+  },
   extensionsToTreatAsEsm: ['.ts'],
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
   moduleNameMapper: {

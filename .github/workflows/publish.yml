@@ -1,12 +1,14 @@
 name: Publish
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
 
 permissions:
-  contents: read
+  contents: write
   packages: write
+  issues: write
+  pull-requests: write
 
 jobs:
   quality:
@@ -14,22 +16,23 @@ jobs:
     permissions:
       contents: read
 
-  publish:
-    name: Build and publish to GitHub Packages
+  release:
+    name: Release
     runs-on: ubuntu-latest
     needs: quality
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
-          registry-url: https://npm.pkg.github.com
-          scope: '@aseguragonzalez'
 
       - name: Install dependencies
         run: npm ci
@@ -37,7 +40,27 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Publish
+      - name: Release
+        id: release
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Set up Node.js for GitHub Packages
+        if: steps.release.outputs.new_release_published == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+          scope: '@aseguragonzalez'
+
+      - name: Publish to GitHub Packages
+        if: steps.release.outputs.new_release_published == 'true'
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

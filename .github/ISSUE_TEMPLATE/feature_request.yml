@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest an improvement or new building block
+title: '[Feature]: '
+labels: ['enhancement', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. Please describe your idea clearly so we can evaluate it in the context of the library's design.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What problem does this solve? What is the use case in a DDD/CQRS context?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the interface, behaviour, or building block you'd like to see added.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any alternative approaches or workarounds you've considered?
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context

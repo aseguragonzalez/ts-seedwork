@@ -1,6 +1,6 @@
 # Component Reference
 
-All components are exported from the package root (`@aseguragonzalez/seedwork`).
+All components are exported from the package root (`@aseguragonzalez/ts-seedwork`).
 
 ---
 

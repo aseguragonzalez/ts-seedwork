@@ -1,4 +1,5 @@
 import { Entity } from '@seedwork/domain/entity';
+import { ValueObject } from '@seedwork/domain/value-object';
 
 describe('Entity (seedwork package)', () => {
   class TestEntity extends Entity<string> {
@@ -69,5 +70,28 @@ describe('Entity (seedwork package)', () => {
     const a = new TestEntity('id-1', 'foo');
 
     expect(a.equals(a)).toBe(true);
+  });
+
+  describe('with ValueObject-based id', () => {
+    class AccountId extends ValueObject {
+      constructor(public readonly value: string) {
+        super();
+      }
+    }
+
+    class AccountEntity extends Entity<AccountId> {
+      constructor(id: AccountId) {
+        super(id);
+      }
+    }
+
+    it('uses ValueObject.equals when id has an equals method', () => {
+      const a = new AccountEntity(new AccountId('id-1'));
+      const b = new AccountEntity(new AccountId('id-1'));
+      const c = new AccountEntity(new AccountId('id-2'));
+
+      expect(a.equals(b)).toBe(true);
+      expect(a.equals(c)).toBe(false);
+    });
   });
 });

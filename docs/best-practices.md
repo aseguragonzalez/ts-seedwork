@@ -6,19 +6,17 @@ This guide explains how to use the seedwork package effectively.
 
 **Keep aggregates small.** Prefer a focused consistency boundary over a large object graph. Small aggregates are easier to reason about, test, and serialize.
 
-**Reference other aggregates by `TypedId` only.** Never hold object references to other aggregate roots. Cross-aggregate operations are coordinated in the application layer (load both, call behavior on each, save both).
+**Reference other aggregates by ID only.** Never hold object references to other aggregate roots. Cross-aggregate operations are coordinated in the application layer (load both, call behavior on each, save both).
 
-**Enforce invariants inside the root.** All rules that must always hold (e.g. `balance >= 0`, required fields) should be checked inside the aggregate constructor or behavior methods. Throw `DomainError` or `ValueError` on violation — never allow invalid state to be constructed.
+**Enforce invariants inside the root.** All rules that must always hold (e.g. `balance >= 0`, required fields) should be checked inside the aggregate constructor or behavior methods. Throw a `DomainError` subclass on violation — never allow invalid state to be constructed.
 
-**Behavior methods return a new instance.** Do not mutate `this` and then emit an event. Instead, compute the new state, construct a new aggregate instance carrying the updated properties and the appended event, and return it. The handler saves the returned instance.
+**Behavior methods return a new instance.** Do not mutate `this`. Compute the new state, construct a new aggregate instance carrying the updated properties and the appended event, and return it. The handler saves the returned instance.
 
 ```typescript
 // Correct — returns a new instance
 deposit(amount: Money): BankAccount {
   const event = MoneyDeposited.create(this.id.value, amount);
-  return new BankAccount(this.id, this.owner, this.balance.add(amount), [
-    ...this.getDomainEvents(), event
-  ]);
+  return new BankAccount(this.id, this.balance.add(amount), [...this.getDomainEvents(), event]);
 }
 
 // Wrong — mutates this
@@ -27,11 +25,11 @@ deposit(amount: Money): void {
 }
 ```
 
-**Use `withEvent` for event-only operations.** When a behavior method records an event but does not change other aggregate properties, use the inherited `withEvent` helper — it clones the aggregate and appends the event in one step.
+**Reconstitute without events.** When loading an aggregate from persistence, use a `static reconstitute(...)` factory that passes no events — those have already been published. This ensures each command execution starts with a clean event slate.
 
 ```typescript
-lock(): BankAccount {
-  return this.withEvent(AccountLocked.create(this.id.value));
+static reconstitute(id: BankAccountId, balance: Money): BankAccount {
+  return new BankAccount(id, balance); // no events
 }
 ```
 
@@ -39,55 +37,112 @@ lock(): BankAccount {
 
 ## Commands and handlers
 
-**One command class per write use case.** The handler's job is orchestration: load the aggregate, call the domain method, publish events, save. Keep all business logic inside the aggregate.
+**One command class per write use case.** The handler's job is orchestration: load the aggregate, call the domain method, save. Keep all business logic inside the aggregate.
 
 **Handler pattern:**
 
 ```typescript
+class AccountNotFoundError extends DomainError {
+  constructor(id: string) {
+    super(`Account ${id} not found`, 'ACCOUNT_NOT_FOUND');
+  }
+}
+
 async execute(command: DepositMoneyCommand): Promise<void> {
   const id = new BankAccountId(command.accountId);
-  const account = await this.repository.getById(id);
-  if (!account) throw new DomainError(`Account ${command.accountId} not found`, 'NOT_FOUND');
+  const account = await this.repository.findById(id);
+  if (!account) throw new AccountNotFoundError(command.accountId);
 
   const amount = new Money(command.amount, command.currency);
   const updated = account.deposit(amount);
 
-  await this.eventBus.publish([...updated.getDomainEvents()]);
-  await this.repository.save(updated);
+  await this.repository.save(updated); // DomainEventPublishingRepository publishes events automatically
 }
 ```
 
-**Stack buses in the canonical order:** `TransactionalCommandBus → DomainEventFlushCommandBus → RegistryCommandBus`. The transaction wraps both the command and the event flush. If the handler throws, the transaction rolls back and no events are dispatched.
+**Stack buses in the canonical order.** Use `CommandBusBuilder` to assemble the stack. Declare `.withValidation()` before `.withTransaction()` so validation errors never open a transaction:
+
+```typescript
+const bus = new CommandBusBuilder()
+  .register(DepositMoneyCommand, new DepositMoneyHandler(repository))
+  .withValidation() // outermost — validate before opening a transaction
+  .withTransaction(unitOfWork)
+  .build();
+```
+
+**Handle domain failures with `Result.fail`.** `RegistryCommandBus` catches `DomainError` thrown by handlers and converts it to `Result.fail`. Infrastructure failures (timeouts, connection drops) propagate as thrown errors — do not wrap them in `Result`.
+
+```typescript
+const result = await bus.dispatch(command);
+if (result.isFail()) {
+  return res.status(422).json({ errors: result.errors });
+}
+```
 
 ---
 
 ## Domain events
 
-**Record events when something meaningful happens.** Append a domain event in the aggregate whenever a state change has business significance. Name events in past tense (`MoneyDeposited`, `AccountOpened`, not `DepositMoney`).
+**Record events when something meaningful happens.** Append a domain event in the aggregate whenever a state change has business significance. Name events in past tense (`MoneyDeposited`, `AccountOpened`).
 
 **Keep event payloads serializable.** Use primitives only in `payload`. Do not embed `ValueObject` instances or aggregate references — serialize their scalar values instead.
 
-**Use `DeferredDomainEventBus` in monolithic applications.** Events are buffered during command handling and dispatched only on `flush()`. This means:
+```typescript
+type MoneyDepositedPayload = { accountId: string; amount: number; currency: string };
 
-- Events are never dispatched for rolled-back work.
-- Event handlers run within the same transaction (when composed with `DomainEventFlushCommandBus` inside `TransactionalCommandBus`).
-- No message broker is needed for intra-process bounded-context integration.
+class MoneyDeposited extends BaseDomainEvent<MoneyDepositedPayload> {
+  static create(accountId: string, amount: Money): MoneyDeposited {
+    return new MoneyDeposited({ accountId, amount: amount.amount, currency: amount.currency });
+  }
+  private constructor(payload: MoneyDepositedPayload) {
+    super(payload);
+  }
+}
+```
 
-Prefer this bus for **single-database, API or MVC applications** where the incoming request is the transaction boundary. For cross-service or async integration, use a message broker and a different bus implementation.
+**Event publishing is transparent.** Do not inject `DomainEventPublisher` into command handlers. Wrap the repository with `DomainEventPublishingRepository` at composition time — it calls `publisher.publish(entity.getDomainEvents())` after every `save`, keeping handlers free of event-publishing logic.
 
-**Call `getDomainEvents()` once, at the end.** In a handler, call `getDomainEvents()` on the final aggregate state (the result of the last behavior call) before publishing. `getDomainEvents()` is a pure read — calling it multiple times is safe.
+```typescript
+const repository = new DomainEventPublishingRepository(new BankAccountRepositoryImpl(), myEventPublisher);
+```
 
-**Design event handlers for a single concern.** One handler per event type and concern (e.g. update read model, send notification). If the bus may redeliver events (async), design handlers to be idempotent.
+**`getDomainEvents()` is a pure read.** No side effects. Calling it multiple times returns the same events. Never clear events manually.
 
 ---
 
 ## Queries and read model
 
-**Return `QueryResponse` DTOs — never domain entities.** Query handlers should return `QueryResponse` subtypes with primitive or simple fields. Map from the aggregate or a projection to the response DTO inside the handler.
+**Return plain DTOs — never domain entities.** Query handlers should return plain TypeScript interfaces or classes with primitive or simple fields. Map from the aggregate or a projection to the response type inside the handler.
+
+```typescript
+interface BalanceResponse {
+  accountId: string;
+  balance: number;
+  currency: string;
+}
+
+class GetBalanceHandler implements QueryHandler<GetBalanceQuery, BalanceResponse> {
+  async execute(query: GetBalanceQuery): Promise<Maybe<BalanceResponse>> {
+    const account = await this.repository.findById(new BankAccountId(query.accountId));
+    if (!account) return Maybe.nothing();
+    return Maybe.just({
+      accountId: query.accountId,
+      balance: account.balance.amount,
+      currency: account.balance.currency,
+    });
+  }
+}
+```
 
 **Keep query handlers read-only.** Do not dispatch commands or change state inside a query handler. Queries are for reading; commands are for writing.
 
-**Implement read-side repositories in infrastructure.** Load aggregates or projections in the handler by going through a repository interface. The query handler should not depend on ORM internals or database types.
+**Use `Maybe.nothing()` for absence and authorization failures.** Never reveal whether a resource exists to an unauthorized caller.
+
+```typescript
+const result = await queryBus.ask<BalanceResponse>(new GetBalanceQuery(id));
+if (result.isNothing()) return res.status(404).send();
+return res.json(result.value);
+```
 
 ---
 
@@ -103,36 +158,34 @@ This is the only rule that must never be broken:
 Domain ← Application ← Infrastructure
 ```
 
-Dependency arrows point from infrastructure toward the domain, not the other way around.
-
 ---
 
 ## Testing
 
-**Domain: unit test aggregates and value objects directly.** No mocks needed. Test that behavior methods produce the expected new state, throw on invariant violations, and emit the right events. Use `getDomainEvents()` to assert emitted events.
+**Domain: unit test aggregates and value objects directly.** No mocks needed. Test that behavior methods produce the expected new state, throw on invariant violations, and emit the right events.
 
 ```typescript
 it('emits MoneyDeposited on deposit', () => {
-  const account = BankAccount.open(id, 'Alice', eur(100)).deposit(eur(50));
+  const account = BankAccount.open(id, eur(100)).deposit(eur(50));
   expect(account.getDomainEvents()[1]).toBeInstanceOf(MoneyDeposited);
   expect(account.balance).toEqual(eur(150));
 });
 ```
 
-**Handlers: test with in-memory fakes.** Use `InMemoryRepository` implementations and a real (or fake) `DeferredDomainEventBus`. Assert that the handler saves the correct aggregate state and publishes the expected events. See `tests/fixtures/bank-account/tests/` for complete examples.
+**Handlers: test with in-memory fakes.** Use `InMemoryRepository` implementations and a stub `DomainEventPublisher`. Assert that the handler saves the correct aggregate state. See `tests/fixtures/bank-account/tests/` for complete examples.
 
-**Integration: wire real buses and in-memory repositories** to validate the full stack (`TransactionalCommandBus + DomainEventFlushCommandBus + RegistryCommandBus`) when you need to verify bus composition.
+**Integration: wire real buses and in-memory repositories** to validate the full stack (`ValidationCommandBus → TransactionalCommandBus → RegistryCommandBus`) when you need to verify bus composition.
 
 ---
 
 ## Summary
 
-| Area         | Practice                                                                                        |
-| ------------ | ----------------------------------------------------------------------------------------------- |
-| Aggregates   | Small; reference others by `TypedId`; enforce invariants; behavior methods return new instances |
-| Commands     | Thin handlers — orchestration only; load → domain → publish events → save                       |
-| Bus stack    | `TransactionalCommandBus → DomainEventFlushCommandBus → RegistryCommandBus`                     |
-| Events       | Past-tense names; serializable payload; deferred flush after command; one concern per handler   |
-| Queries      | Return `QueryResponse` DTOs; no side effects; no commands in query handlers                     |
-| Dependencies | Domain pure; application uses ports; infrastructure implements and points inward                |
-| Testing      | Unit test domain directly; test handlers with in-memory fakes                                   |
+| Area         | Practice                                                                                 |
+| ------------ | ---------------------------------------------------------------------------------------- |
+| Aggregates   | Small; reference others by ID; enforce invariants; behavior methods return new instances |
+| Commands     | Thin handlers — orchestration only; load → domain → save                                 |
+| Bus stack    | `ValidationCommandBus → TransactionalCommandBus → RegistryCommandBus`                    |
+| Events       | Past-tense names; serializable payload; published transparently by repository decorator  |
+| Queries      | Return plain TS DTOs; no side effects; no commands in query handlers                     |
+| Dependencies | Domain pure; application uses ports; infrastructure implements and points inward         |
+| Testing      | Unit test domain directly; test handlers with in-memory fakes                            |

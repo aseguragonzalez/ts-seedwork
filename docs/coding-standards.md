@@ -18,11 +18,11 @@ These standards apply to projects built on top of this package.
 | Keep domain free of framework and infrastructure imports       | Import framework types, ORMs, or HTTP in the domain layer      |
 | One use case = one command/query + one handler                 | Put multiple use cases in a single handler                     |
 | Return new aggregate instances from behavior methods           | Mutate aggregate state in place                                |
-| Throw `DomainError` or `ValueError` for domain violations      | Throw generic `Error` or framework exceptions from domain code |
+| Throw a `DomainError` subclass for domain violations           | Throw generic `Error` or framework exceptions from domain code |
 | Name events in past tense (`MoneyDeposited`)                   | Name events like commands (`DepositMoney`)                     |
-| Reference other aggregates by `TypedId` only                   | Hold object references to other aggregate roots                |
+| Reference other aggregates by their ID value object only       | Hold object references to other aggregate roots                |
 | Use primitives or simple DTOs at command/query port boundaries | Leak domain types through port interfaces when avoidable       |
-| Stack buses: `Transactional → EventFlush → Registry`           | Flush events outside the transaction, or in the wrong order    |
+| Stack buses: `Validation → Transactional → Registry`           | Open a transaction before validating the command               |
 | One public class per file; file name matches class name        | Put multiple unrelated classes in one file                     |
 
 ---
@@ -31,31 +31,29 @@ These standards apply to projects built on top of this package.
 
 ### Entities
 
-- Extend `Entity<ID>` with a `TypedId` subclass as the `ID` type parameter.
+- Extend `Entity<ID>` using a `ValueObject` subclass as the `ID` type parameter.
 - Equality is by identity only — never compare entities by attributes.
 - Do not expose mutable setters that bypass invariants.
 
 ### Value objects
 
 - Extend `ValueObject`. All properties must be `readonly`.
-- Validate in the constructor; throw `ValueError` on invalid state.
-- Implement `equals` only if the default property-by-property comparison is insufficient — the base class handles primitives, `Date`, arrays, and nested `ValueObject`s.
+- Validate in the constructor; throw a `DomainError` subclass on invalid state.
+- The base class handles `equals` for primitives, `Date`, arrays, and nested `ValueObject`s — override only when the default comparison is insufficient.
 - Static factories or named constructors are fine; keep constructors `private` or `protected`.
 
 ### Aggregates
 
-- Extend `AggregateRoot<TypedId>`. Private constructor with static factory methods (`open`, `create`, `reconstitute`).
+- Extend `AggregateRoot<ID>`. Private constructor with static factory methods (`open`, `create`, `reconstitute`).
 - Every behavior method returns a new instance — never mutates.
 - Thread domain events explicitly through the constructor: `new MyAggregate(id, ...state, [...this.getDomainEvents(), newEvent])`.
-- Use `withEvent` only for behaviors that record an event without changing other state.
 - Expose only the root to the outside; internal entities and value objects are not shared directly.
 
 ### Domain events
 
-- Extend `BaseDomainEvent`. Private constructor + `static create(...)` factory.
-- `eventName` in past tense. Use a consistent format: `EntityName/EventName` or just `EventName`.
-- `payload` must be serializable: primitives only. Serialize `TypedId` values to strings, `ValueObject` fields to their scalar values.
-- Use `crypto.randomUUID()` for event `id`.
+- Extend `BaseDomainEvent<TPayload>`. Private constructor + `static create(...)` factory.
+- Name events in past tense (`AccountOpened`, `MoneyDeposited`).
+- `payload` must be serializable: primitives only. Serialize ID and value object fields to their scalar values.
 
 ### Repositories
 
@@ -65,9 +63,8 @@ These standards apply to projects built on top of this package.
 
 ### Errors
 
-- Use `DomainError` directly for general domain violations: `throw new DomainError('message', 'ERROR_CODE')`.
-- Extend `DomainError` for named, reusable error types when the distinction has meaning in the consuming code (e.g. `InsufficientFundsError`).
-- Use `ValueError` for invalid value object or typed-id state.
+- `DomainError` is `abstract` — always extend it with a named subclass: `class InsufficientFundsError extends DomainError { ... }`.
+- The class name carries the ubiquitous language; `code` carries the external contract identifier for API mapping.
 - Do not catch infrastructure exceptions in the domain layer.
 
 ---
@@ -78,50 +75,49 @@ These standards apply to projects built on top of this package.
 
 - One command class per write use case implementing `Command`.
 - One handler implementing `CommandHandler<TCommand>`.
-- Handler pattern: `load aggregate → call domain method(s) → publish getDomainEvents() → save`.
+- Handler pattern: load aggregate → call domain method(s) → save. Event publishing is handled transparently by `DomainEventPublishingRepository` — do not publish events inside handlers.
 - Use primitives in commands when the handler constructs domain objects internally. This keeps the port boundary free of domain type coupling.
 - Do not put business logic in the handler — only orchestration.
 
 ### Queries and handlers
 
 - One query class per read use case implementing `Query`.
-- One handler implementing `QueryHandler<TQuery, TResult>` returning a `QueryResponse` subtype.
+- One handler implementing `QueryHandler<TQuery, TResult>` returning a plain TypeScript interface or class — never a domain entity.
 - Handlers are read-only: no commands dispatched, no state changed.
-- Do not return domain entities — return `QueryResponse` subtypes with primitive or DTO fields.
 
 ### Domain event handlers
 
 - Implement `DomainEventHandler<TEvent>`.
-- Subscribe by `eventName` string via `DomainEventBus.subscribe`.
 - One concern per handler (e.g. update projection, send notification — these are separate handlers).
 - Design for idempotency when the bus may redeliver events.
+- Wiring (routing event types to handlers) is the responsibility of the consuming project's composition root — it is not prescribed by this package.
 
 ---
 
 ## Infrastructure layer
 
 - Implement `Repository` and `UnitOfWork` here, not in domain.
-- Wire `RegistryCommandBus` and `RegistryQueryBus` with handlers.
-- Compose command buses in the canonical order: `TransactionalCommandBus → DomainEventFlushCommandBus → RegistryCommandBus`.
-- Use `DeferredDomainEventBus` for monolithic single-DB applications. Subscribe event handlers before the first command is dispatched.
+- Wire `RegistryCommandBus` and `RegistryQueryBus` with handlers via `.register(...)`.
+- Compose command buses using `CommandBusBuilder` in the canonical order: `.withValidation()` before `.withTransaction()`.
+- Wrap the repository with `DomainEventPublishingRepository` to publish events transparently after `save`.
 - Do not put domain or application use-case logic in infrastructure.
 
 ---
 
 ## Naming conventions
 
-| Artifact                 | Convention                               | Example                                    |
-| ------------------------ | ---------------------------------------- | ------------------------------------------ |
-| Aggregate / Entity class | `PascalCase` noun                        | `BankAccount`, `Transaction`               |
-| `TypedId` subclass       | `<EntityName>Id`                         | `BankAccountId`                            |
-| Value object             | `PascalCase` noun                        | `Money`, `EmailAddress`                    |
-| Domain event             | `PascalCase` past tense                  | `MoneyDeposited`, `AccountOpened`          |
-| Command                  | `PascalCase` verb phrase                 | `DepositMoney`, `OpenAccount`              |
-| Query                    | `Get<Noun>` or `Find<Noun>`              | `GetBalance`, `FindActiveAccounts`         |
-| Command / query handler  | `<UseCaseName>Handler`                   | `DepositMoneyHandler`, `GetBalanceHandler` |
-| Repository interface     | `<Aggregate>Repository`                  | `BankAccountRepository`                    |
-| Concrete error class     | `<Context>Error` extending `DomainError` | `InsufficientFundsError`                   |
-| Event handler            | `<EventName>Handler` or by concern       | `UpdateBalanceProjectionHandler`           |
+| Artifact                | Convention                            | Example                                       |
+| ----------------------- | ------------------------------------- | --------------------------------------------- |
+| Aggregate / Entity      | `PascalCase` noun                     | `BankAccount`, `Transaction`                  |
+| ID value object         | `<EntityName>Id`                      | `BankAccountId`                               |
+| Value object            | `PascalCase` noun                     | `Money`, `EmailAddress`                       |
+| Domain event            | `PascalCase` past tense               | `MoneyDeposited`, `AccountOpened`             |
+| Command                 | `PascalCase` verb phrase + `Command`  | `DepositMoneyCommand`, `OpenAccountCommand`   |
+| Query                   | `Get<Noun>Query` or `Find<Noun>Query` | `GetBalanceQuery`, `FindActiveAccountsQuery`  |
+| Command / query handler | `<UseCaseName>Handler`                | `DepositMoneyHandler`, `GetBalanceHandler`    |
+| Repository interface    | `<Aggregate>Repository`               | `BankAccountRepository`                       |
+| Domain error class      | `<Context>Error`                      | `InsufficientFundsError`                      |
+| Domain event handler    | `On<EventName>` or by concern         | `OnMoneyDeposited`, `UpdateBalanceProjection` |
 
 ---
 
@@ -134,7 +130,7 @@ src/
 ├── <bounded-context>/
 │   ├── domain/
 │   │   ├── <aggregate>.ts                  # AggregateRoot subclass
-│   │   ├── <aggregate>-id.ts               # TypedId subclass
+│   │   ├── <aggregate>-id.ts               # ValueObject subclass used as aggregate ID
 │   │   ├── value-objects/
 │   │   │   └── <value-object>.ts
 │   │   ├── events/
@@ -144,7 +140,7 @@ src/
 │   │   └── <use-case>/
 │   │       ├── <use-case>.command.ts       # or .query.ts
 │   │       ├── <use-case>.handler.ts
-│   │       └── <use-case>.response.ts      # QueryResponse subtype (queries only)
+│   │       └── <use-case>.response.ts      # plain TS interface (queries only)
 │   └── infrastructure/
 │       └── <impl>-<aggregate>.repository.ts
 └── shared/

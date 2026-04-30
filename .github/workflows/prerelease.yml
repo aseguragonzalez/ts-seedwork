@@ -1,0 +1,81 @@
+name: Pre-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      preid:
+        description: 'Pre-release identifier used as dist-tag. Use pr-{number} (e.g. pr-42) to enable automatic cleanup when the PR closes.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  quality:
+    uses: ./.github/workflows/quality.yml
+    permissions:
+      contents: read
+
+  publish:
+    name: Publish (${{ inputs.preid }})
+    runs-on: ubuntu-latest
+    needs: quality
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Compute version and tag
+        id: pre
+        run: |
+          TAG=$(echo "${{ inputs.preid }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g;s/^-//;s/-$//')
+          BASE=$(node -p "require('./package.json').version" | sed 's/-.*//')
+          VERSION="${BASE}-${TAG}.${GITHUB_RUN_NUMBER}"
+          npm version "${VERSION}" --no-git-tag-version
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Publish to npm
+        run: npm publish --tag ${{ steps.pre.outputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Set up Node.js for GitHub Packages
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+          scope: '@aseguragonzalez'
+
+      - name: Publish to GitHub Packages
+        run: npm publish --tag ${{ steps.pre.outputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## Pre-release \`${{ steps.pre.outputs.version }}\` published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Install by version:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "npm install @aseguragonzalez/ts-seedwork@${{ steps.pre.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "Install by tag (always points to the latest publish for this identifier):" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "npm install @aseguragonzalez/ts-seedwork@${{ steps.pre.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

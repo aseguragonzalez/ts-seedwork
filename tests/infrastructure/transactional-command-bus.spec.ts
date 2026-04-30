@@ -30,6 +30,18 @@ describe('TransactionalCommandBus (seedwork package)', () => {
     expect(uow.rollback).not.toHaveBeenCalled();
   });
 
+  it('should commit when inner bus returns Result.fail', async () => {
+    const uow = makeUow();
+    const inner = makeInner(() => Promise.resolve(Result.fail([{ code: 'ERR', description: 'fail' }])));
+    const bus = new TransactionalCommandBus(inner, uow);
+
+    const result = await bus.dispatch(new DoSomething());
+
+    expect(result.isFail()).toBe(true);
+    expect(uow.commit).toHaveBeenCalledTimes(1);
+    expect(uow.rollback).not.toHaveBeenCalled();
+  });
+
   it('should rollback and rethrow on handler failure', async () => {
     const uow = makeUow();
     const inner = makeInner(() => Promise.reject(new Error('handler failed')));
