@@ -117,7 +117,6 @@ jobs:
           extra_plugins: |
             @semantic-release/changelog@6
             @semantic-release/git@10
-          node_token: ${{ secrets.NPM_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
