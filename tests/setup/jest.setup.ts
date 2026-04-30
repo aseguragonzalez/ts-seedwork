@@ -1,1 +1,2 @@
 jest.clearAllMocks();
+jest.restoreAllMocks();

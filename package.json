@@ -1,6 +1,6 @@
 {
-  "name": "@aseguragonzalez/seedwork",
-  "version": "0.0.7",
+  "name": "@aseguragonzalez/ts-seedwork",
+  "version": "0.0.0",
   "description": "Shared domain, application, and infrastructure building blocks (DDD seedwork).",
   "author": "Alfonso Segura",
   "license": "MIT",
@@ -22,12 +22,12 @@
     "node": ">=22"
   },
   "publishConfig": {
-    "access": "restricted",
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
+  "homepage": "https://github.com/aseguragonzalez/ts-seedwork#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aseguragonzalez/vigilant-parakeet.git"
+    "url": "git+https://github.com/aseguragonzalez/ts-seedwork.git"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -37,11 +37,14 @@
     "lint": "eslint .",
     "prepare": "husky",
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "test:fast": "jest --runInBand",
     "test:watch": "jest --watch",
     "type:check": "tsc -p tsconfig.test.json --noEmit --skipLibCheck"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "^10.0.1",
     "@swc/core": "^1.15.30",
     "@swc/jest": "^0.2.39",
@@ -49,10 +52,8 @@
     "@types/node": "^25.6.0",
     "eslint": "^10.2.1",
     "eslint-config-prettier": "^10.1.5",
-    "eslint-import-resolver-typescript": "^4.4.2",
-    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-jest": "^29.15.2",
-    "eslint-plugin-prettier": "^5.4.1",
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "globals": "^17.5.0",
     "husky": "^9.1.7",

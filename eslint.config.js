@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import jest from 'eslint-plugin-jest';
-import importPlugin from 'eslint-plugin-import';
+import importX from 'eslint-plugin-import-x';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
@@ -13,9 +13,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig([
-  {
-    ignores: ['dist/', 'node_modules/'],
-  },
   globalIgnores([
     'node_modules',
     'dist',
@@ -33,7 +30,7 @@ export default defineConfig([
     plugins: {
       js,
       '@typescript-eslint': tseslint.plugin,
-      import: importPlugin,
+      'import-x': importX,
       jest,
       'simple-import-sort': simpleImportSort,
     },
@@ -58,14 +55,7 @@ export default defineConfig([
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
-      'import/no-unresolved': 'off',
-    },
-    settings: {
-      'import/resolver': {
-        typescript: {
-          project: ['./tsconfig.json'],
-        },
-      },
+      'import-x/no-unresolved': 'off',
     },
   },
   {

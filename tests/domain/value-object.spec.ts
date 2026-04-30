@@ -36,4 +36,22 @@ describe('ValueObject (seedwork package)', () => {
 
     expect(a.equals(a)).toBe(true);
   });
+
+  it('should return false when compared to a value object with fewer properties', () => {
+    class Narrow extends ValueObject {
+      constructor(public readonly prop1: string) {
+        super();
+      }
+    }
+    const a = new TestValueObject('foo', 1);
+    const b = new Narrow('foo');
+
+    expect(a.equals(b as any)).toBe(false);
+  });
+
+  it('toString returns a readable representation of all properties', () => {
+    const a = new TestValueObject('hello', 42);
+
+    expect(a.toString()).toBe('TestValueObject(prop1: hello, prop2: 42)');
+  });
 });

@@ -8,7 +8,6 @@
     "moduleResolution": "NodeNext",
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES2024",
-    "types": ["jest", "node"]
+    "target": "ES2024"
   }
 }

@@ -5,13 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm ci               # install deps + set up husky pre-commit hooks
-npm run lint         # ESLint
-npm run format:check # Prettier check
-npm run type:check   # tsc --noEmit (no emit, full type checking)
-npm test             # run all tests via Jest + @swc/jest
-npm run build        # compile to dist/ via tsconfig.build.json
-npm run clean        # remove dist/
+npm ci                   # install deps + set up husky pre-commit hooks
+npm run lint             # ESLint
+npm run format:check     # Prettier check
+npm run type:check       # tsc --noEmit (no emit, full type checking)
+npm test                 # run all tests via Jest + @swc/jest
+npm run test:coverage    # run tests with coverage (enforces thresholds)
+npm run build            # compile to dist/ via tsconfig.build.json
+npm run clean            # remove dist/
 ```
 
 Run a single test file:
@@ -20,15 +21,46 @@ Run a single test file:
 npx jest tests/domain/aggregate-root.spec.ts
 ```
 
-Full quality gate (lint + format + types + tests):
+Full quality gate (lint + format + types + tests + coverage):
 
 ```bash
-npm run lint && npm run format:check && npm run type:check && npm test
+npm run lint && npm run format:check && npm run type:check && npm run test:coverage
 ```
+
+## Release and versioning
+
+Releases are fully automated via semantic-release on push to `main`. **Never edit the version in `package.json` manually.**
+
+### PR title is the version signal
+
+This repository uses **squash merge**. The PR title is the only commit that lands on `main` and the input semantic-release uses to calculate the version bump. Always write PR titles in Conventional Commits format:
+
+```
+<type>(optional scope): <short description>
+```
+
+| PR title type                        | Version bump |
+| ------------------------------------ | ------------ |
+| `fix:`                               | patch        |
+| `feat:`                              | minor        |
+| `feat!:` or `BREAKING CHANGE` footer | major        |
+
+### API surface changes require matching commit type
+
+The CI diffs `dist/*.d.ts` against `main`. If the public API changed, the PR title must reflect the severity — a `fix:` title on a PR that removes an export will fail the check.
+
+| API change                                   | Minimum required type |
+| -------------------------------------------- | --------------------- |
+| New export, added optional property/param    | `feat:`               |
+| Removed export, changed or removed signature | `feat!:`              |
+
+### Pre-release workflow
+
+To publish a testable build from a PR branch: GitHub Actions → **Pre-release** → Run workflow → select branch → enter `pr-{number}` as identifier. The dist-tag is cleaned up automatically when the PR closes.
 
 ## Architecture
 
-This is a DDD seedwork library (`@aseguragonzalez/seedwork`) published to GitHub Packages. It provides base classes and interfaces for building domain-driven TypeScript applications using CQRS.
+This is a DDD seedwork library (`@aseguragonzalez/ts-seedwork`) published to npm and GitHub Packages. It provides base classes and interfaces for building domain-driven TypeScript applications using CQRS.
 
 ### Layer structure
 

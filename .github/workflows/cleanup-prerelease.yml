@@ -1,0 +1,40 @@
+name: Cleanup pre-release
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  cleanup:
+    name: Remove dist-tag pr-${{ github.event.pull_request.number }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Remove npm dist-tag
+        continue-on-error: true
+        run: npm dist-tag rm @aseguragonzalez/ts-seedwork pr-${{ github.event.pull_request.number }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Set up Node.js for GitHub Packages
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+          scope: '@aseguragonzalez'
+
+      - name: Remove GitHub Packages dist-tag
+        continue-on-error: true
+        run: npm dist-tag rm @aseguragonzalez/ts-seedwork pr-${{ github.event.pull_request.number }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

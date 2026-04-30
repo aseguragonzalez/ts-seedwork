@@ -1,0 +1,31 @@
+name: Question / Support
+description: Ask a question or get help using the package
+labels: ['question']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening a question, please check the [documentation](https://github.com/aseguragonzalez/ts-seedwork/tree/main/docs) and existing issues.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know or understand?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Share any relevant code, configuration, or error messages.
+      render: typescript
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: '0.0.7'
+    validations:
+      required: true

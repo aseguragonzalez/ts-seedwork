@@ -1,8 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -14,3 +12,81 @@ jobs:
     uses: ./.github/workflows/quality.yml
     permissions:
       contents: read
+
+  pr-title:
+    name: PR title
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  api-diff:
+    name: API surface check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build PR branch
+        run: npm ci && npm run build
+
+      - name: Build main branch
+        run: |
+          git worktree add --detach /tmp/main-worktree origin/main
+          cd /tmp/main-worktree && npm ci && npm run build
+
+      - name: Check API surface
+        run: |
+          DIFF=$(diff -r --include="*.d.ts" /tmp/main-worktree/dist dist || true)
+
+          if [ -z "$DIFF" ]; then
+            echo "No API surface changes detected."
+            exit 0
+          fi
+
+          {
+            echo "## API surface changes"
+            echo '```diff'
+            echo "$DIFF"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          HAS_REMOVALS=$(printf '%s\n' "$DIFF" | grep -cE '^-[^-]' || true)
+
+          COMMITS=$(git log origin/main..HEAD --format="%s%n%b")
+          HAS_BREAKING=$(printf '%s\n' "$COMMITS" | grep -cE 'BREAKING CHANGE|^feat(\([^)]+\))?!:' || true)
+          HAS_FEAT=$(printf '%s\n' "$COMMITS" | grep -cE '^feat(\([^)]+\))?[!:]' || true)
+
+          if [ "$HAS_BREAKING" -gt 0 ]; then
+            echo "API surface changed — BREAKING CHANGE commit found (semantic-release will bump major)."
+            exit 0
+          fi
+
+          if [ "$HAS_REMOVALS" -gt 0 ]; then
+            echo "API surface has removals but no BREAKING CHANGE commit found."
+            echo "Use 'feat!: ...' or add a 'BREAKING CHANGE' footer."
+            exit 1
+          fi
+
+          if [ "$HAS_FEAT" -gt 0 ]; then
+            echo "API surface changed — feat: commit found (semantic-release will bump minor)."
+            exit 0
+          fi
+
+          echo "API surface changed but no 'feat:' commit found."
+          echo "Use 'feat: ...' for additions or 'feat!: ...' for breaking changes."
+          exit 1
