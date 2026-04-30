@@ -141,7 +141,7 @@ npx jest tests/domain/aggregate-root.spec.ts     # single file
 Full quality gate:
 
 ```bash
-npm run lint && npm run format:check && npm run type:check && npm test
+npm run lint && npm run format:check && npm run type:check && npm run test:coverage
 ```
 
 ---
