@@ -56,7 +56,7 @@ The CI diffs `dist/*.d.ts` against `main`. If the public API changed, the PR tit
 
 ### Pre-release workflow
 
-To publish a testable build from a PR branch: GitHub Actions → **Pre-release** → Run workflow → select branch → enter `pr-{number}` as identifier. The dist-tag is cleaned up automatically when the PR closes.
+To publish a testable build from a PR branch: GitHub Actions → **Pre-release** → Run workflow → select branch → enter `pr-{number}` as identifier. Pre-release versions are kept permanently on the registry.
 
 ## Architecture
 
