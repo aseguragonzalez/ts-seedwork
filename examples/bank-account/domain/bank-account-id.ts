@@ -1,4 +1,4 @@
-import { ValueObject } from '@seedwork';
+import { ValueObject } from '@aseguragonzalez/ts-seedwork';
 
 import { InvalidBankAccountIdError } from './errors.js';
 

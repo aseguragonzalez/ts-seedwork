@@ -1,4 +1,4 @@
-import { AggregateRoot, TypedDomainEvent } from '@seedwork';
+import { AggregateRoot, TypedDomainEvent } from '@aseguragonzalez/ts-seedwork';
 
 import { BankAccountId } from './bank-account-id.js';
 import { InsufficientFundsError, InvalidOwnerError } from './errors.js';

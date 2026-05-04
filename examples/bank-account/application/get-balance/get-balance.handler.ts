@@ -1,4 +1,4 @@
-import { Maybe, QueryHandler } from '@seedwork';
+import { Maybe, QueryHandler } from '@aseguragonzalez/ts-seedwork';
 
 import { BankAccountRepository } from '../../domain/bank-account.repository.js';
 import { BankAccountId } from '../../domain/bank-account-id.js';

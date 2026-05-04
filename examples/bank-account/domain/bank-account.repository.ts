@@ -1,4 +1,4 @@
-import { Repository } from '@seedwork';
+import { Repository } from '@aseguragonzalez/ts-seedwork';
 
 import { BankAccount } from './bank-account.js';
 import { BankAccountId } from './bank-account-id.js';

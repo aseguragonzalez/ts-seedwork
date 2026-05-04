@@ -9,6 +9,7 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@seedwork/(.*)$': '<rootDir>/src/$1',
     '^@seedwork$': '<rootDir>/src/index',
+    '^@aseguragonzalez/ts-seedwork$': '<rootDir>/src/index',
   },
   roots: ['<rootDir>/tests', '<rootDir>/examples'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup/jest.setup.ts'],

@@ -1,4 +1,4 @@
-import { Command, ValidationErrorDetail, ValidationErrors } from '@seedwork';
+import { Command, ValidationErrorDetail, ValidationErrors } from '@aseguragonzalez/ts-seedwork';
 
 export class DepositMoneyCommand implements Command {
   constructor(

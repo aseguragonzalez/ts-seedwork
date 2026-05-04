@@ -1,4 +1,4 @@
-import { ValueObject } from '@seedwork';
+import { ValueObject } from '@aseguragonzalez/ts-seedwork';
 
 import { CurrencyMismatchError, InvalidAmountError, InvalidCurrencyError } from './errors.js';
 

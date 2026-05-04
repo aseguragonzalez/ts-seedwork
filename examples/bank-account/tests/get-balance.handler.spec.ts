@@ -1,4 +1,9 @@
-import { DomainEventPublisher, DomainEventPublishingRepository, RegistryCommandBus, RegistryQueryBus } from '@seedwork';
+import {
+  DomainEventPublisher,
+  DomainEventPublishingRepository,
+  RegistryCommandBus,
+  RegistryQueryBus,
+} from '@aseguragonzalez/ts-seedwork';
 
 import { GetBalanceHandler } from '../application/get-balance/get-balance.handler.js';
 import { GetBalanceQuery } from '../application/get-balance/get-balance.query.js';
