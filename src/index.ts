@@ -13,8 +13,8 @@ export { ValidationErrors } from './application/validation.error.js';
 // Application — Domain Events
 export type { DomainEventHandler, DomainEventPublisher } from './application/domain-events.js';
 
-// Application — Logger
-export type { Logger } from './application/logger.js';
+// Shared — Logger
+export type { Logger } from './shared/logger.js';
 
 // Domain — Building blocks
 export { AggregateRoot } from './domain/aggregate-root.js';
