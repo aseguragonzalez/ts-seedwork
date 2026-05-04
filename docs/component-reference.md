@@ -4,6 +4,16 @@ All components are exported from the package root (`@aseguragonzalez/ts-seedwork
 
 ---
 
+## Shared
+
+### `Logger`
+
+- **Role:** Cross-cutting logging port.
+- **Methods:** `debug`, `info`, `warn`, `error`, `fatal`. Each takes `(message: string, ...extras)`.
+- **Usage:** Inject into handlers or infrastructure implementations; implement with your logging library.
+
+---
+
 ## Domain layer
 
 ### `Entity<ID>`
@@ -149,14 +159,6 @@ class InsufficientFundsError extends DomainError {
   }
 }
 ```
-
----
-
-### `Logger`
-
-- **Role:** Cross-cutting logging port.
-- **Methods:** `debug`, `info`, `warn`, `error`, `fatal`. Each takes `(message: string, ...extras)`.
-- **Usage:** Inject into handlers or infrastructure implementations; implement with your logging library.
 
 ---
 

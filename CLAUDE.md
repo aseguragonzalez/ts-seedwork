@@ -64,6 +64,10 @@ This is a DDD seedwork library (`@aseguragonzalez/ts-seedwork`) published to npm
 
 ### Layer structure
 
+**`src/shared/`** — cross-cutting contracts, usable by any layer:
+
+- `Logger` — logging port; inject into handlers or infrastructure implementations
+
 **`src/domain/`** — pure domain building blocks with no dependencies:
 
 - `Entity` / `AggregateRoot` — base classes; `AggregateRoot` stores domain events, `getDomainEvents()` is a pure read with no side effects
