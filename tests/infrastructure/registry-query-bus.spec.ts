@@ -1,6 +1,6 @@
-import type { Query, QueryHandler } from '@seedwork/application/queries';
-import { Maybe } from '@seedwork/application/queries';
-import { RegistryQueryBus } from '@seedwork/infrastructure/registry-query-bus';
+import type { Query, QueryHandler } from '@src/application/queries';
+import { Maybe } from '@src/application/queries';
+import { RegistryQueryBus } from '@src/infrastructure/registry-query-bus';
 
 interface UserData {
   id: string;

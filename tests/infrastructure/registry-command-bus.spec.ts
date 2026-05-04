@@ -1,5 +1,5 @@
-import type { Command, CommandHandler } from '@seedwork/application/commands';
-import { RegistryCommandBus } from '@seedwork/infrastructure/registry-command-bus';
+import type { Command, CommandHandler } from '@src/application/commands';
+import { RegistryCommandBus } from '@src/infrastructure/registry-command-bus';
 
 class CreateUserCommand implements Command {
   constructor(public readonly name: string) {}

@@ -1,6 +1,6 @@
-import { Command, CommandBus, Result } from '@seedwork/application/commands';
-import { UnitOfWork } from '@seedwork/domain/unit-of-work';
-import { TransactionalCommandBus } from '@seedwork/infrastructure/transactional-command-bus';
+import { Command, CommandBus, Result } from '@src/application/commands';
+import { UnitOfWork } from '@src/domain/unit-of-work';
+import { TransactionalCommandBus } from '@src/infrastructure/transactional-command-bus';
 
 class DoSomething implements Command {
   validate(): void {}

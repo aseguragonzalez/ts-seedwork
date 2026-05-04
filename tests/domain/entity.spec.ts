@@ -1,5 +1,5 @@
-import { Entity } from '@seedwork/domain/entity';
-import { ValueObject } from '@seedwork/domain/value-object';
+import { Entity } from '@src/domain/entity';
+import { ValueObject } from '@src/domain/value-object';
 
 describe('Entity (seedwork package)', () => {
   class TestEntity extends Entity<string> {

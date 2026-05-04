@@ -1,5 +1,5 @@
-import { AggregateRoot } from '@seedwork/domain/aggregate-root';
-import { BaseDomainEvent, TypedDomainEvent } from '@seedwork/domain/domain-event';
+import { AggregateRoot } from '@src/domain/aggregate-root';
+import { BaseDomainEvent, TypedDomainEvent } from '@src/domain/domain-event';
 
 class TestEvent extends BaseDomainEvent<{ value: string }> {
   constructor(value: string) {

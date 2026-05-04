@@ -110,7 +110,7 @@ Concrete bus implementations and decorators. May import from domain and applicat
 
 - Source uses ESM (`"type": "module"`), `NodeNext` module resolution.
 - All internal imports use `.js` extensions (even for `.ts` source files): `import { Foo } from './foo.js'`.
-- The path alias `@seedwork` maps to `src/index.ts` in tests via `moduleNameMapper`.
+- Path alias `@src` maps to `src/` in tests (via `moduleNameMapper` in `jest.config.ts` and `tsconfig.test.json`); use `@src` for barrel imports and `@src/domain/...` etc. for sub-module imports.
 
 ### Naming
 

@@ -1,4 +1,4 @@
-import { DomainError } from '@seedwork/domain/domain-error';
+import { DomainError } from '@src/domain/domain-error';
 
 describe('DomainError (seedwork package)', () => {
   class TestDomainError extends DomainError {

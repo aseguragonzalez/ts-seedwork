@@ -1,7 +1,7 @@
-import type { Command } from '@seedwork';
-import { Result, ValidationErrors } from '@seedwork';
-import type { CommandBus } from '@seedwork/application/commands';
-import { ValidationCommandBus } from '@seedwork/infrastructure/validation-command-bus';
+import type { Command } from '@src';
+import { Result, ValidationErrors } from '@src';
+import type { CommandBus } from '@src/application/commands';
+import { ValidationCommandBus } from '@src/infrastructure/validation-command-bus';
 
 class ValidCommand implements Command {
   public validate(): void {}

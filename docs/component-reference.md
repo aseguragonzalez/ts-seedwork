@@ -96,7 +96,9 @@ class Money extends ValueObject {
     public readonly currency: string
   ) {
     super();
-    if (amount < 0) throw new InvalidAmountError();
+    if (amount < 0) {
+      throw new InvalidAmountError();
+    }
   }
 }
 ```
@@ -200,7 +202,9 @@ res.status(204).send();
 
 ```typescript
 const result = await queryBus.ask<BalanceData>(new GetBalanceQuery(id));
-if (result.isNothing()) return res.status(404).send();
+if (result.isNothing()) {
+  return res.status(404).send();
+}
 return res.json(result.value);
 ```
 

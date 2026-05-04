@@ -1,4 +1,4 @@
-import { BaseDomainEvent } from '@seedwork/domain/domain-event';
+import { BaseDomainEvent } from '@src/domain/domain-event';
 
 type TestPayload = { key: string };
 

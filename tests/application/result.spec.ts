@@ -1,4 +1,4 @@
-import { Result } from '@seedwork';
+import { Result } from '@src';
 
 describe('Result.ok()', () => {
   it('constructs an ok result', () => {

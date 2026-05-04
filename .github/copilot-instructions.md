@@ -92,7 +92,7 @@ const bus = new CommandBusBuilder()
   ```typescript
   import { Entity } from './entity.js';
   ```
-- Tests use the `@seedwork` alias (`moduleNameMapper` in Jest config) pointing to `src/index.ts`.
+- Path alias `@src` maps to `src/` in tests (via `moduleNameMapper` in `jest.config.ts` and `tsconfig.test.json`); use `@src` for barrel imports and `@src/domain/...` etc. for sub-module imports.
 
 ### Naming
 

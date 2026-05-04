@@ -15,7 +15,7 @@ import {
   ValidationErrors,
   ValidationQueryBus,
   ValueObject,
-} from '../src/index.js';
+} from '@src';
 
 describe('exports', () => {
   it('exports all public API classes', () => {
