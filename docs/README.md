@@ -10,9 +10,9 @@ This package provides DDD and hexagonal architecture building blocks for TypeScr
 
 ## Complete working example
 
-A full, self-contained example that exercises all building blocks lives in the test suite:
+A full, self-contained example that exercises all building blocks:
 
-- **[tests/fixtures/bank-account/](../tests/fixtures/bank-account/)** — Domain (aggregate root, value objects, domain events, repository interface), application (commands, queries, handlers), and infrastructure (in-memory repository). Use it as a reference when building a new bounded context.
+- **[examples/bank-account/](../examples/bank-account/)** — Domain (aggregate root, value objects, domain events, repository interface), application (commands, queries, handlers), and infrastructure (in-memory repository). Use it as a reference when building a new bounded context.
 
 ## Quick links
 

@@ -5,7 +5,9 @@ import { QueryBusBuilder } from '@seedwork/infrastructure/query-bus-builder';
 class GetSomething implements Query {
   constructor(public readonly valid: boolean = true) {}
   validate(): void {
-    if (!this.valid) throw new ValidationErrors([{ code: 'INVALID', message: 'invalid' }]);
+    if (!this.valid) {
+      throw new ValidationErrors([{ code: 'INVALID', message: 'invalid' }]);
+    }
   }
 }
 

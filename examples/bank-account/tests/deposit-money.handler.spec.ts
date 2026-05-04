@@ -5,7 +5,7 @@ import {
   RegistryCommandBus,
   ValidationCommandBus,
   ValidationErrors,
-} from '@seedwork';
+} from '@aseguragonzalez/ts-seedwork';
 
 import { DepositMoneyCommand } from '../application/deposit-money/deposit-money.command.js';
 import { DepositMoneyHandler } from '../application/deposit-money/deposit-money.handler.js';

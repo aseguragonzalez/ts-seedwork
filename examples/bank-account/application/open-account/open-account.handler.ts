@@ -1,4 +1,4 @@
-import { CommandHandler } from '@seedwork';
+import { CommandHandler } from '@aseguragonzalez/ts-seedwork';
 
 import { BankAccount } from '../../domain/bank-account.js';
 import { BankAccountRepository } from '../../domain/bank-account.repository.js';

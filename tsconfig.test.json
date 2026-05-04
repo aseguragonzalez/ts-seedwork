@@ -4,9 +4,10 @@
     "baseUrl": ".",
     "paths": {
       "@seedwork": ["src/index.js"],
-      "@seedwork/*": ["src/*.js"]
+      "@seedwork/*": ["src/*.js"],
+      "@aseguragonzalez/ts-seedwork": ["src/index.js"]
     },
     "types": ["jest", "node"]
   },
-  "include": ["src/**/*", "tests/**/*"]
+  "include": ["src/**/*", "tests/**/*", "examples/**/*"]
 }

@@ -1,4 +1,4 @@
-import { Maybe, QueryHandler } from '@seedwork';
+import { Maybe, QueryHandler } from '@aseguragonzalez/ts-seedwork';
 
 import { BankAccountRepository } from '../../domain/bank-account.repository.js';
 import { BankAccountId } from '../../domain/bank-account-id.js';
@@ -11,7 +11,9 @@ export class GetBalanceHandler implements QueryHandler<GetBalanceQuery, BalanceD
   async execute(query: GetBalanceQuery): Promise<Maybe<BalanceData>> {
     const id = new BankAccountId(query.accountId);
     const account = await this.repository.findById(id);
-    if (!account) return Maybe.nothing();
+    if (!account) {
+      return Maybe.nothing();
+    }
     return Maybe.just({
       accountId: account.id.value,
       owner: account.owner,

@@ -56,7 +56,7 @@ Pre-release dist-tags are removed automatically when the pull request closes. Se
 ## How to use
 
 - **[Component reference](docs/component-reference.md)** — every class, interface, and infrastructure component with usage examples.
-- **[tests/fixtures/bank-account/](tests/fixtures/bank-account/)** — full working example exercising all building blocks end to end.
+- **[examples/bank-account/](examples/bank-account/)** — full working example exercising all building blocks end to end.
 
 ### 1. Define a domain aggregate
 

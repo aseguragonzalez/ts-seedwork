@@ -1,4 +1,4 @@
-import { BaseDomainEvent } from '@seedwork';
+import { BaseDomainEvent } from '@aseguragonzalez/ts-seedwork';
 
 import { Money } from '../money.js';
 

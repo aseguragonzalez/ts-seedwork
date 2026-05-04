@@ -1,4 +1,4 @@
-import { ValueObject } from '@seedwork';
+import { ValueObject } from '@aseguragonzalez/ts-seedwork';
 
 import { CurrencyMismatchError, InvalidAmountError, InvalidCurrencyError } from './errors.js';
 
@@ -8,8 +8,12 @@ export class Money extends ValueObject {
     public readonly currency: string
   ) {
     super();
-    if (amount < 0) throw new InvalidAmountError(amount);
-    if (!currency || currency.trim() === '') throw new InvalidCurrencyError();
+    if (amount < 0) {
+      throw new InvalidAmountError(amount);
+    }
+    if (!currency || currency.trim() === '') {
+      throw new InvalidCurrencyError();
+    }
   }
 
   add(other: Money): Money {

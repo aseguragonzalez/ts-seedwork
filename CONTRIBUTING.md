@@ -134,7 +134,7 @@ Concrete bus implementations and decorators. May import from domain and applicat
 ## Testing
 
 - Tests live in `tests/` mirroring the `src/` structure.
-- Use the [bank account fixture](tests/fixtures/bank-account/) as a reference for new examples — it exercises all building blocks end to end.
+- Use the [bank account example](examples/bank-account/) as a reference for new examples — it exercises all building blocks end to end.
 - Transpiled by `@swc/jest` (no `tsc` during test runs).
 - Run a single file: `npx jest tests/domain/aggregate-root.spec.ts`
 - Run the full suite: `npm test`

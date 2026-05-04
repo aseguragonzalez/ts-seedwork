@@ -1,4 +1,4 @@
-import { DomainError } from '@seedwork';
+import { DomainError } from '@aseguragonzalez/ts-seedwork';
 
 export class InvalidOwnerError extends DomainError {
   constructor() {

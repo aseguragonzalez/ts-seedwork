@@ -5,7 +5,7 @@ import {
   RegistryCommandBus,
   ValidationCommandBus,
   ValidationErrors,
-} from '@seedwork';
+} from '@aseguragonzalez/ts-seedwork';
 
 import { OpenAccountCommand } from '../application/open-account/open-account.command.js';
 import { OpenAccountHandler } from '../application/open-account/open-account.handler.js';
