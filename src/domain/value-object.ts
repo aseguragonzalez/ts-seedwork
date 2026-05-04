@@ -24,13 +24,20 @@ export abstract class ValueObject {
       const thisVal = (this as any)[prop];
       const otherVal = (other as any)[prop];
       if (thisVal instanceof ValueObject) {
-        if (!thisVal.equals(otherVal)) return false;
-      } else if (thisVal instanceof Date) {
-        if (!(otherVal instanceof Date) || thisVal.getTime() !== otherVal.getTime()) return false;
-      } else if (Array.isArray(thisVal)) {
-        if (!Array.isArray(otherVal) || thisVal.length !== otherVal.length) return false;
-        if (!thisVal.every((v, i) => (v instanceof ValueObject ? v.equals(otherVal[i]) : v === otherVal[i])))
+        if (!thisVal.equals(otherVal)) {
           return false;
+        }
+      } else if (thisVal instanceof Date) {
+        if (!(otherVal instanceof Date) || thisVal.getTime() !== otherVal.getTime()) {
+          return false;
+        }
+      } else if (Array.isArray(thisVal)) {
+        if (!Array.isArray(otherVal) || thisVal.length !== otherVal.length) {
+          return false;
+        }
+        if (!thisVal.every((v, i) => (v instanceof ValueObject ? v.equals(otherVal[i]) : v === otherVal[i]))) {
+          return false;
+        }
       } else if (thisVal !== otherVal) {
         return false;
       }

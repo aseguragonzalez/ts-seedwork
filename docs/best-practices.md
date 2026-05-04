@@ -172,7 +172,7 @@ it('emits MoneyDeposited on deposit', () => {
 });
 ```
 
-**Handlers: test with in-memory fakes.** Use `InMemoryRepository` implementations and a stub `DomainEventPublisher`. Assert that the handler saves the correct aggregate state. See `tests/fixtures/bank-account/tests/` for complete examples.
+**Handlers: test with in-memory fakes.** Use `InMemoryRepository` implementations and a stub `DomainEventPublisher`. Assert that the handler saves the correct aggregate state. See `examples/bank-account/tests/` for complete examples.
 
 **Integration: wire real buses and in-memory repositories** to validate the full stack (`ValidationCommandBus → TransactionalCommandBus → RegistryCommandBus`) when you need to verify bus composition.
 

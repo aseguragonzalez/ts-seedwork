@@ -6,7 +6,9 @@ import { CommandBusBuilder } from '@seedwork/infrastructure/command-bus-builder'
 class DoSomething implements Command {
   constructor(public readonly valid: boolean = true) {}
   validate(): void {
-    if (!this.valid) throw new ValidationErrors([{ code: 'INVALID', message: 'invalid' }]);
+    if (!this.valid) {
+      throw new ValidationErrors([{ code: 'INVALID', message: 'invalid' }]);
+    }
   }
 }
 

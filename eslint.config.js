@@ -56,6 +56,7 @@ export default defineConfig([
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
       'import-x/no-unresolved': 'off',
+      curly: ['error', 'all'],
     },
   },
   {
