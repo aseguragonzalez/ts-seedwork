@@ -51,7 +51,9 @@ class AccountNotFoundError extends DomainError {
 async execute(command: DepositMoneyCommand): Promise<void> {
   const id = new BankAccountId(command.accountId);
   const account = await this.repository.findById(id);
-  if (!account) throw new AccountNotFoundError(command.accountId);
+  if (!account) {
+    throw new AccountNotFoundError(command.accountId);
+  }
 
   const amount = new Money(command.amount, command.currency);
   const updated = account.deposit(amount);
@@ -124,7 +126,9 @@ interface BalanceResponse {
 class GetBalanceHandler implements QueryHandler<GetBalanceQuery, BalanceResponse> {
   async execute(query: GetBalanceQuery): Promise<Maybe<BalanceResponse>> {
     const account = await this.repository.findById(new BankAccountId(query.accountId));
-    if (!account) return Maybe.nothing();
+    if (!account) {
+      return Maybe.nothing();
+    }
     return Maybe.just({
       accountId: query.accountId,
       balance: account.balance.amount,
@@ -140,7 +144,9 @@ class GetBalanceHandler implements QueryHandler<GetBalanceQuery, BalanceResponse
 
 ```typescript
 const result = await queryBus.ask<BalanceResponse>(new GetBalanceQuery(id));
-if (result.isNothing()) return res.status(404).send();
+if (result.isNothing()) {
+  return res.status(404).send();
+}
 return res.json(result.value);
 ```
 

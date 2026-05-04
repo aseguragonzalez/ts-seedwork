@@ -110,8 +110,12 @@ class OpenAccountCommand implements Command {
   ) {}
   validate(): void {
     const errors: ValidationErrorDetail[] = [];
-    if (this.balance < 0) errors.push({ code: 'INVALID_BALANCE', message: 'Balance cannot be negative' });
-    if (errors.length > 0) throw new ValidationErrors(errors);
+    if (this.balance < 0) {
+      errors.push({ code: 'INVALID_BALANCE', message: 'Balance cannot be negative' });
+    }
+    if (errors.length > 0) {
+      throw new ValidationErrors(errors);
+    }
   }
 }
 
