@@ -1,7 +1,7 @@
-import type { Command, CommandBus, CommandHandler } from '@seedwork';
-import { DomainError, Result, ValidationErrors } from '@seedwork';
-import type { UnitOfWork } from '@seedwork/domain/unit-of-work';
-import { CommandBusBuilder } from '@seedwork/infrastructure/command-bus-builder';
+import type { Command, CommandBus, CommandHandler } from '@src';
+import { DomainError, Result, ValidationErrors } from '@src';
+import type { UnitOfWork } from '@src/domain/unit-of-work';
+import { CommandBusBuilder } from '@src/infrastructure/command-bus-builder';
 
 class DoSomething implements Command {
   constructor(public readonly valid: boolean = true) {}

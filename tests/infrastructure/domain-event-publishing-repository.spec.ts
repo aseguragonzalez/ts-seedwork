@@ -1,6 +1,6 @@
-import { DomainEventPublisher, DomainEventPublishingRepository, Repository, TypedDomainEvent } from '@seedwork';
-import { AggregateRoot } from '@seedwork/domain/aggregate-root';
-import { BaseDomainEvent } from '@seedwork/domain/domain-event';
+import { DomainEventPublisher, DomainEventPublishingRepository, Repository, TypedDomainEvent } from '@src';
+import { AggregateRoot } from '@src/domain/aggregate-root';
+import { BaseDomainEvent } from '@src/domain/domain-event';
 
 class TestId {
   constructor(public readonly value: string) {}

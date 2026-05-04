@@ -111,6 +111,6 @@ Reference example: `examples/bank-account/` — complete BankAccount example (do
 
 - Source uses ESM (`"type": "module"`), `NodeNext` module resolution
 - All internal imports use `.js` extensions (even for `.ts` source files)
-- Path alias `@seedwork` maps to `src/index.ts` in tests (via `moduleNameMapper`)
+- Path alias `@src` maps to `src/` in tests (via `moduleNameMapper` in `jest.config.ts` and `tsconfig.test.json`); use `@src` for barrel imports and `@src/domain/...` etc. for sub-module imports
 - Tests live in `tests/` mirroring `src/` structure; transpiled by `@swc/jest` (no tsc during test runs)
 - `tsconfig.build.json` emits to `dist/`; `tsconfig.test.json` is used by the type-check step for test files

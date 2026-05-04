@@ -1,6 +1,6 @@
-import type { Query, QueryBus, QueryHandler } from '@seedwork';
-import { Maybe, ValidationErrors } from '@seedwork';
-import { QueryBusBuilder } from '@seedwork/infrastructure/query-bus-builder';
+import type { Query, QueryBus, QueryHandler } from '@src';
+import { Maybe, ValidationErrors } from '@src';
+import { QueryBusBuilder } from '@src/infrastructure/query-bus-builder';
 
 class GetSomething implements Query {
   constructor(public readonly valid: boolean = true) {}

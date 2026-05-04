@@ -7,8 +7,8 @@ export default {
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
-    '^@seedwork/(.*)$': '<rootDir>/src/$1',
-    '^@seedwork$': '<rootDir>/src/index',
+    '^@src/(.*)$': '<rootDir>/src/$1',
+    '^@src$': '<rootDir>/src/index',
     '^@aseguragonzalez/ts-seedwork$': '<rootDir>/src/index',
   },
   roots: ['<rootDir>/tests', '<rootDir>/examples'],

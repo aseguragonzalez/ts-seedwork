@@ -1,7 +1,7 @@
-import { ValidationErrors } from '@seedwork';
-import type { Query, QueryBus } from '@seedwork/application/queries';
-import { Maybe } from '@seedwork/application/queries';
-import { ValidationQueryBus } from '@seedwork/infrastructure/validation-query-bus';
+import { ValidationErrors } from '@src';
+import type { Query, QueryBus } from '@src/application/queries';
+import { Maybe } from '@src/application/queries';
+import { ValidationQueryBus } from '@src/infrastructure/validation-query-bus';
 
 interface UserData {
   id: string;

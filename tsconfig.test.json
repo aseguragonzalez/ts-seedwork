@@ -3,8 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@seedwork": ["src/index.js"],
-      "@seedwork/*": ["src/*.js"],
+      "@src": ["src/index.js"],
+      "@src/*": ["src/*.js"],
       "@aseguragonzalez/ts-seedwork": ["src/index.js"]
     },
     "types": ["jest", "node"]

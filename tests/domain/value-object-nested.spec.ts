@@ -1,4 +1,4 @@
-import { ValueObject } from '@seedwork/domain/value-object';
+import { ValueObject } from '@src/domain/value-object';
 
 class Money extends ValueObject {
   constructor(
