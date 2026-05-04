@@ -149,7 +149,8 @@ if (result.isFail()) {
 
 | Layer              | Components                                                                                                                                                                                   |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Domain**         | `Entity`, `AggregateRoot`, `ValueObject`, `BaseDomainEvent`, `Repository`, `UnitOfWork`, `DomainError`, `Logger`                                                                             |
+| **Shared**         | `Logger`                                                                                                                                                                                     |
+| **Domain**         | `Entity`, `AggregateRoot`, `ValueObject`, `BaseDomainEvent`, `Repository`, `UnitOfWork`, `DomainError`                                                                                       |
 | **Application**    | `Command`/`CommandBus`/`CommandHandler`, `Query`/`QueryBus`/`QueryHandler`, `Result`, `Maybe`, `DomainEventPublisher`, `DomainEventHandler`                                                  |
 | **Infrastructure** | `RegistryCommandBus`, `RegistryQueryBus`, `TransactionalCommandBus`, `ValidationCommandBus`, `ValidationQueryBus`, `DomainEventPublishingRepository`, `CommandBusBuilder`, `QueryBusBuilder` |
 
