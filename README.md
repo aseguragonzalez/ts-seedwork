@@ -1,6 +1,7 @@
 # @aseguragonzalez/ts-seedwork
 
 [![CI](https://github.com/aseguragonzalez/ts-seedwork/actions/workflows/ci.yml/badge.svg)](https://github.com/aseguragonzalez/ts-seedwork/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/aseguragonzalez/ts-seedwork/branch/main/graph/badge.svg)](https://codecov.io/gh/aseguragonzalez/ts-seedwork)
 [![npm version](https://img.shields.io/npm/v/@aseguragonzalez/ts-seedwork.svg)](https://www.npmjs.com/package/@aseguragonzalez/ts-seedwork)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js >=22](https://img.shields.io/node/v/%40aseguragonzalez%2Fts-seedwork)](https://nodejs.org/)
@@ -51,103 +52,13 @@ Or by exact version (shown in the workflow's Job Summary after publishing):
 npm install @aseguragonzalez/ts-seedwork@0.0.0-pr-42.7
 ```
 
-Pre-release dist-tags are removed automatically when the pull request closes. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to publish one.
+Pre-release dist-tags are removed automatically when the pull request closes. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for how to publish one.
 
 ## How to use
 
-- **[Component reference](docs/component-reference.md)** — every class, interface, and infrastructure component with usage examples.
-- **[examples/bank-account/](examples/bank-account/)** — full working example exercising all building blocks end to end.
+See [Getting Started](docs/getting-started.md) for a step-by-step walkthrough: define a value object, build an aggregate root, create a command handler, and wire a bus.
 
-### 1. Define a domain aggregate
-
-```typescript
-import { AggregateRoot, BaseDomainEvent, TypedDomainEvent, ValueObject } from '@aseguragonzalez/ts-seedwork';
-
-class AccountId extends ValueObject {
-  constructor(public readonly value: string) {
-    super();
-  }
-}
-
-class AccountOpened extends BaseDomainEvent<{ accountId: string; balance: number }> {
-  static create(accountId: string, balance: number) {
-    return new AccountOpened({ accountId, balance });
-  }
-  private constructor(payload: { accountId: string; balance: number }) {
-    super(payload);
-  }
-}
-
-class BankAccount extends AggregateRoot<AccountId> {
-  private constructor(
-    id: AccountId,
-    public readonly balance: number,
-    events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = []
-  ) {
-    super(id, events);
-  }
-
-  static open(id: AccountId, initialBalance: number): BankAccount {
-    const event = AccountOpened.create(id.value, initialBalance);
-    return new BankAccount(id, initialBalance, [event]);
-  }
-
-  static reconstitute(id: AccountId, balance: number): BankAccount {
-    return new BankAccount(id, balance); // no events — already published
-  }
-}
-```
-
-### 2. Implement a command handler
-
-```typescript
-import { Command, CommandHandler, ValidationErrorDetail, ValidationErrors } from '@aseguragonzalez/ts-seedwork';
-
-class OpenAccountCommand implements Command {
-  constructor(
-    public readonly accountId: string,
-    public readonly balance: number
-  ) {}
-  validate(): void {
-    const errors: ValidationErrorDetail[] = [];
-    if (this.balance < 0) {
-      errors.push({ code: 'INVALID_BALANCE', message: 'Balance cannot be negative' });
-    }
-    if (errors.length > 0) {
-      throw new ValidationErrors(errors);
-    }
-  }
-}
-
-class OpenAccountHandler implements CommandHandler<OpenAccountCommand> {
-  constructor(private readonly repository: BankAccountRepository) {}
-
-  async execute(command: OpenAccountCommand): Promise<void> {
-    const id = new AccountId(command.accountId);
-    const account = BankAccount.open(id, command.balance);
-    await this.repository.save(account); // publishes AccountOpened automatically
-  }
-}
-```
-
-### 3. Assemble the bus
-
-```typescript
-import { CommandBusBuilder, DomainEventPublishingRepository } from '@aseguragonzalez/ts-seedwork';
-
-const repository = new DomainEventPublishingRepository(new BankAccountRepositoryImpl(), myEventPublisher);
-
-const bus = new CommandBusBuilder()
-  .register(OpenAccountCommand, new OpenAccountHandler(repository))
-  .withValidation() // outermost — validates before opening a transaction
-  .withTransaction(unitOfWork)
-  .build();
-
-const result = await bus.dispatch(new OpenAccountCommand('acc-1', 1000));
-if (result.isFail()) {
-  console.error(result.errors);
-}
-```
+The [Component Reference](docs/component-reference.md) covers every class and interface in detail. A complete working example lives in [`examples/bank-account/`](examples/bank-account/).
 
 ## What's included
 
@@ -170,7 +81,7 @@ if (result.isFail()) {
 
 ## Development
 
-If you plan to contribute, read [CONTRIBUTING.md](CONTRIBUTING.md) for the full setup guide, architecture principles, and pull request process.
+If you plan to contribute, read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for the full setup guide, architecture principles, and pull request process.
 
 | Task              | Command                                                                               |
 | ----------------- | ------------------------------------------------------------------------------------- |
@@ -182,7 +93,10 @@ If you plan to contribute, read [CONTRIBUTING.md](CONTRIBUTING.md) for the full 
 
 ## Documentation
 
-- [Component reference](docs/component-reference.md) — every class, interface, and infrastructure component with usage examples
+- [Getting Started](docs/getting-started.md) — step-by-step guide for building with this library
+- [Component Reference](docs/component-reference.md) — every class, interface, and infrastructure component with usage examples
+- [Best Practices](docs/best-practices.md) — patterns and idioms for effective use
+- [Coding Standards](docs/coding-standards.md) — conventions aligned with DDD and Clean Architecture
 - [Changelog](CHANGELOG.md)
 
 ## Requirements
@@ -192,7 +106,7 @@ If you plan to contribute, read [CONTRIBUTING.md](CONTRIBUTING.md) for the full 
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## References
 
