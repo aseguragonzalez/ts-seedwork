@@ -115,7 +115,7 @@ Write no comments by default. Add one only when the **why** is non-obvious (hidd
 
 - Tests live in `tests/` mirroring `src/`. A test for `src/domain/entity.ts` goes in `tests/domain/entity.spec.ts`.
 - Transpiled by `@swc/jest` — no `tsc` during test runs.
-- Reference example: `examples/bank-account/` — complete example exercising all building blocks end to end. Use it as a template for new examples.
+- Reference example: `docs/examples/bank-account/` — complete example exercising all building blocks end to end. Use it as a template for new examples.
 - When adding a component, add a spec at the matching path.
 - When fixing a bug, add a regression test that fails before the fix.
 

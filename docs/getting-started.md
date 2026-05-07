@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide walks through building a minimal bounded context with `@aseguragonzalez/ts-seedwork`. The running example is a bank account domain. For a complete, self-contained implementation exercising all building blocks, see [`examples/bank-account/`](../examples/bank-account/).
+This guide walks through building a minimal bounded context with `@aseguragonzalez/ts-seedwork`. The running example is a bank account domain. For a complete, self-contained implementation exercising all building blocks, see [`examples/bank-account/`](examples/bank-account/).
 
 ## 1. Install
 
@@ -126,7 +126,7 @@ if (result.isFail()) {
 
 ## Next steps
 
-- [`examples/bank-account/`](../examples/bank-account/) — complete bounded context exercising every building block end to end.
+- [`examples/bank-account/`](examples/bank-account/) — complete bounded context exercising every building block end to end.
 - [Component Reference](component-reference.md) — every class, interface, and infrastructure component with full API details.
 - [Best Practices](best-practices.md) — design guidelines and patterns for effective use.
 - [Coding Standards](coding-standards.md) — conventions aligned with DDD and Clean Architecture.
