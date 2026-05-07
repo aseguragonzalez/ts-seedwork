@@ -52,7 +52,7 @@ Or by exact version (shown in the workflow's Job Summary after publishing):
 npm install @aseguragonzalez/ts-seedwork@0.0.0-pr-42.7
 ```
 
-Pre-release dist-tags are removed automatically when the pull request closes. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for how to publish one.
+Pre-release dist-tags are removed automatically when the pull request closes. See [CONTRIBUTING.md](https://github.com/aseguragonzalez/ts-seedwork/blob/main/.github/CONTRIBUTING.md) for how to publish one.
 
 ## How to use
 
