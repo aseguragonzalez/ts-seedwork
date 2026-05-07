@@ -9,5 +9,5 @@
     },
     "types": ["jest", "node"]
   },
-  "include": ["src/**/*", "tests/**/*", "examples/**/*"]
+  "include": ["src/**/*", "tests/**/*", "docs/examples/**/*"]
 }

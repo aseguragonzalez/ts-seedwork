@@ -11,7 +11,7 @@ export default {
     '^@src$': '<rootDir>/src/index',
     '^@aseguragonzalez/ts-seedwork$': '<rootDir>/src/index',
   },
-  roots: ['<rootDir>/tests', '<rootDir>/examples'],
+  roots: ['<rootDir>/tests', '<rootDir>/docs/examples'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup/jest.setup.ts'],
   transform: {
     '^.+\\.(t|j)sx?$': [

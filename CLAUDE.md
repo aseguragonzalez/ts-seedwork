@@ -105,7 +105,7 @@ const bus = new CommandBusBuilder()
 
 Handler pattern: load aggregate → call behavior method → `save(updated)`. Event publishing is handled transparently by `DomainEventPublishingRepository` — handlers have no knowledge of the event bus.
 
-Reference example: `examples/bank-account/` — complete BankAccount example (domain, application, infrastructure, tests).
+Reference example: `docs/examples/bank-account/` — complete BankAccount example (domain, application, infrastructure, tests).
 
 ### Module / import conventions
 
