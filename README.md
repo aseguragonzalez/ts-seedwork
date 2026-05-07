@@ -106,7 +106,7 @@ If you plan to contribute, read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for t
 
 ## Contributing
 
-See [CONTRIBUTING.md](.github/CONTRIBUTING.md).
+See [CONTRIBUTING.md](https://github.com/aseguragonzalez/ts-seedwork/blob/main/.github/CONTRIBUTING.md).
 
 ## References
 
