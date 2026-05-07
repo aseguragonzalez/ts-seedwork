@@ -12,6 +12,7 @@ jobs:
     uses: ./.github/workflows/quality.yml
     permissions:
       contents: read
+    secrets: inherit
 
   pr-title:
     name: PR title

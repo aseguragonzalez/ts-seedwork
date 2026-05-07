@@ -134,7 +134,7 @@ Concrete bus implementations and decorators. May import from domain and applicat
 ## Testing
 
 - Tests live in `tests/` mirroring the `src/` structure.
-- Use the [bank account example](examples/bank-account/) as a reference for new examples — it exercises all building blocks end to end.
+- Use the [bank account example](../examples/bank-account/) as a reference for new examples — it exercises all building blocks end to end.
 - Transpiled by `@swc/jest` (no `tsc` during test runs).
 - Run a single file: `npx jest tests/domain/aggregate-root.spec.ts`
 - Run the full suite: `npm test`
@@ -151,7 +151,7 @@ When adding a new component, add a test file at the matching path. When fixing a
 4. Open a pull request against `main`. Set the **PR title** in Conventional Commits format — the CI validates it automatically (see [PR title and commit style](#pr-title-and-commit-style)).
 5. A review from [@aseguragonzalez](https://github.com/aseguragonzalez) is required before merging.
 
-Pull requests that change the public API should include an update to [docs/component-reference.md](docs/component-reference.md).
+Pull requests that change the public API should include an update to [docs/component-reference.md](../docs/component-reference.md).
 
 ---
 
