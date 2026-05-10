@@ -9,7 +9,7 @@ import { DepositMoneyCommand } from './deposit-money.command.js';
 export class DepositMoneyHandler implements CommandHandler<DepositMoneyCommand> {
   constructor(private readonly repository: BankAccountRepository) {}
 
-  async execute(command: DepositMoneyCommand): Promise<void> {
+  async handle(command: DepositMoneyCommand): Promise<void> {
     const id = new BankAccountId(command.accountId);
     const account = await this.repository.findById(id);
     if (!account) {

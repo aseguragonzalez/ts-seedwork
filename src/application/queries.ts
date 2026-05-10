@@ -27,7 +27,7 @@ export interface Query {
 }
 
 export interface QueryHandler<TQuery extends Query, TResult> {
-  execute(query: TQuery): Promise<Maybe<TResult>>;
+  handle(query: TQuery): Promise<Maybe<TResult>>;
 }
 
 export interface QueryBus {

@@ -9,7 +9,7 @@ import { OpenAccountCommand } from './open-account.command.js';
 export class OpenAccountHandler implements CommandHandler<OpenAccountCommand> {
   constructor(private readonly repository: BankAccountRepository) {}
 
-  async execute(command: OpenAccountCommand): Promise<void> {
+  async handle(command: OpenAccountCommand): Promise<void> {
     const id = new BankAccountId(command.accountId);
     const initialBalance = new Money(command.initialAmount, command.currency);
     const account = BankAccount.open(id, command.owner, initialBalance);

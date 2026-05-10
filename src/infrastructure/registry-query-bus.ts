@@ -17,6 +17,6 @@ export class RegistryQueryBus implements QueryBus {
     if (!handler) {
       throw new Error(`No handler registered for query: ${query.constructor.name}`);
     }
-    return handler.execute(query) as Promise<Maybe<TResult>>;
+    return handler.handle(query) as Promise<Maybe<TResult>>;
   }
 }

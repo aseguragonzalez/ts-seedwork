@@ -20,7 +20,7 @@ export class RegistryCommandBus implements CommandBus {
       throw new Error(`No handler registered for command: ${command.constructor.name}`);
     }
     try {
-      await handler.execute(command);
+      await handler.handle(command);
       return Result.ok();
     } catch (error) {
       if (error instanceof DomainError) {

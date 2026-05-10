@@ -1,5 +1,7 @@
 import type { Command, CommandBus, CommandHandler } from '../application/commands.js';
 import type { UnitOfWork } from '../domain/unit-of-work.js';
+import type { DeferredDomainEventBus } from './deferred-domain-event-bus.js';
+import { DomainEventFlushCommandBus } from './domain-event-flush-command-bus.js';
 import { RegistryCommandBus } from './registry-command-bus.js';
 import { TransactionalCommandBus } from './transactional-command-bus.js';
 import { ValidationCommandBus } from './validation-command-bus.js';
@@ -23,6 +25,11 @@ export class CommandBusBuilder {
 
   withTransaction(unitOfWork: UnitOfWork): this {
     this.steps.push(inner => new TransactionalCommandBus(inner, unitOfWork));
+    return this;
+  }
+
+  withDomainEventFlushing(eventBus: DeferredDomainEventBus): this {
+    this.steps.push(inner => new DomainEventFlushCommandBus(inner, eventBus));
     return this;
   }
 

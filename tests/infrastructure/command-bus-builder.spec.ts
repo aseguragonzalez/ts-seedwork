@@ -14,7 +14,7 @@ class DoSomething implements Command {
 
 class DoSomethingHandler implements CommandHandler<DoSomething> {
   public calls = 0;
-  async execute(_command: DoSomething): Promise<void> {
+  async handle(_command: DoSomething): Promise<void> {
     this.calls++;
   }
 }
@@ -26,13 +26,13 @@ class RuleViolatedError extends DomainError {
 }
 
 class DomainErrorHandler implements CommandHandler<DoSomething> {
-  async execute(_command: DoSomething): Promise<void> {
+  async handle(_command: DoSomething): Promise<void> {
     throw new RuleViolatedError();
   }
 }
 
 class InfraErrorHandler implements CommandHandler<DoSomething> {
-  async execute(_command: DoSomething): Promise<void> {
+  async handle(_command: DoSomething): Promise<void> {
     throw new Error('infra failure');
   }
 }
