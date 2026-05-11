@@ -1,6 +1,5 @@
 import { BaseDomainEvent, DeferredDomainEventBus, DomainEventHandler } from '@src';
 
-// Use public constructors so they can be passed as `new (...args: any[]) => TEvent`
 class OrderPlaced extends BaseDomainEvent<{ orderId: string }> {
   constructor(orderId: string) {
     super({ orderId });
@@ -24,7 +23,7 @@ const makeHandler = <T extends { id: string; occurredAt: Date }>() => {
 };
 
 describe('DeferredDomainEventBus', () => {
-  it('subscribe + publish + flush invokes handlers in order', async () => {
+  it('subscribe + publish + dispatch invokes handlers in order', async () => {
     const bus = new DeferredDomainEventBus();
     const { handler, received } = makeHandler<OrderPlaced>();
     bus.subscribe(OrderPlaced, handler);
@@ -32,19 +31,19 @@ describe('DeferredDomainEventBus', () => {
     const event1 = new OrderPlaced('order-1');
     const event2 = new OrderPlaced('order-2');
     await bus.publish([event1, event2]);
-    await bus.flush();
+    await bus.dispatch();
 
     expect(handler.handle).toHaveBeenCalledTimes(2);
     expect(received[0]).toBe(event1);
     expect(received[1]).toBe(event2);
   });
 
-  it('flush with no pending events is a no-op', async () => {
+  it('dispatch with no pending events is a no-op', async () => {
     const bus = new DeferredDomainEventBus();
     const { handler } = makeHandler<OrderPlaced>();
     bus.subscribe(OrderPlaced, handler);
 
-    await bus.flush();
+    await bus.dispatch();
 
     expect(handler.handle).not.toHaveBeenCalled();
   });
@@ -57,7 +56,7 @@ describe('DeferredDomainEventBus', () => {
     bus.subscribe(OrderPlaced, h2);
 
     await bus.publish([new OrderPlaced('order-1')]);
-    await bus.flush();
+    await bus.dispatch();
 
     expect(h1.handle).toHaveBeenCalledTimes(1);
     expect(h2.handle).toHaveBeenCalledTimes(1);
@@ -67,17 +66,17 @@ describe('DeferredDomainEventBus', () => {
     const bus = new DeferredDomainEventBus();
 
     await bus.publish([new OrderPlaced('order-1')]);
-    await expect(bus.flush()).resolves.toBeUndefined();
+    await expect(bus.dispatch()).resolves.toBeUndefined();
   });
 
-  it('clear empties the buffer without dispatching', async () => {
+  it('discard empties the buffer without dispatching', async () => {
     const bus = new DeferredDomainEventBus();
     const { handler } = makeHandler<OrderPlaced>();
     bus.subscribe(OrderPlaced, handler);
 
     await bus.publish([new OrderPlaced('order-1')]);
-    bus.clear();
-    await bus.flush();
+    bus.discard();
+    await bus.dispatch();
 
     expect(handler.handle).not.toHaveBeenCalled();
   });
@@ -90,9 +89,22 @@ describe('DeferredDomainEventBus', () => {
     bus.subscribe(PaymentReceived, paymentHandler);
 
     await bus.publish([new OrderPlaced('order-1'), new PaymentReceived(100)]);
-    await bus.flush();
+    await bus.dispatch();
 
     expect(orderReceived).toHaveLength(1);
     expect(paymentReceived).toHaveLength(1);
+  });
+
+  it('publishing the same event id twice is idempotent - handler invoked once', async () => {
+    const bus = new DeferredDomainEventBus();
+    const { handler } = makeHandler<OrderPlaced>();
+    bus.subscribe(OrderPlaced, handler);
+
+    const event = new OrderPlaced('order-1');
+    await bus.publish([event]);
+    await bus.publish([event]);
+    await bus.dispatch();
+
+    expect(handler.handle).toHaveBeenCalledTimes(1);
   });
 });

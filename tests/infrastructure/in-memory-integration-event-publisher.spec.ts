@@ -34,11 +34,11 @@ describe('InMemoryIntegrationEventPublisher', () => {
     expect(published).toHaveLength(1);
   });
 
-  it('clear empties the published list', async () => {
+  it('reset empties the published list', async () => {
     const publisher = new InMemoryIntegrationEventPublisher();
     await publisher.publish([new OrderCreatedEvent('order-1')]);
 
-    publisher.clear();
+    publisher.reset();
 
     expect(publisher.published).toHaveLength(0);
   });

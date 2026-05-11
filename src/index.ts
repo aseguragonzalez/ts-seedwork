@@ -11,18 +11,25 @@ export type { ValidationErrorDetail } from './application/validation.error.js';
 export { ValidationErrors } from './application/validation.error.js';
 
 // Application — Domain Events
-export type { DomainEventBus } from './application/domain-event-bus.js';
-export type { DomainEventHandler, DomainEventPublisher } from './application/domain-events.js';
+export type {
+  DomainEventBus,
+  DomainEventBusPublisher,
+  DomainEventBusSubscriber,
+} from './application/domain-event-bus.js';
+export type { DomainEventHandler } from './application/domain-events.js';
 
 // Application — Integration Events
-export type { IntegrationEvent, IntegrationEventPublisher } from './application/integration-event.js';
+export type {
+  IntegrationEvent,
+  IntegrationEventHandler,
+  IntegrationEventPublisher,
+  IntegrationEventPublisherSpy,
+} from './application/integration-event.js';
 export { BaseIntegrationEvent } from './application/integration-event.js';
 
-// Application — Outbox
-export type { OutboxRecord, OutboxRepository, OutboxStatus } from './application/outbox.js';
-
 // Application — Background Tasks
-export type { BackgroundTask, TaskBus, TaskHandler, TaskQueue, TaskStatus } from './application/background-task.js';
+export type { BackgroundTask, TaskHandler, TaskScheduler } from './application/background-task.js';
+export { BaseBackgroundTask } from './application/background-task.js';
 
 // Shared — Logger
 export type { Logger } from './shared/logger.js';
@@ -46,7 +53,7 @@ export { DomainError } from './domain/domain-error.js';
 // Infrastructure — Command Bus
 export { CommandBusBuilder } from './infrastructure/command-bus-builder.js';
 export { DeferredDomainEventBus } from './infrastructure/deferred-domain-event-bus.js';
-export { DomainEventFlushCommandBus } from './infrastructure/domain-event-flush-command-bus.js';
+export { DomainEventCoordinatorCommandBus } from './infrastructure/domain-event-coordinator-command-bus.js';
 export { RegistryCommandBus } from './infrastructure/registry-command-bus.js';
 export { TransactionalCommandBus } from './infrastructure/transactional-command-bus.js';
 export { ValidationCommandBus } from './infrastructure/validation-command-bus.js';
@@ -60,11 +67,26 @@ export { ValidationQueryBus } from './infrastructure/validation-query-bus.js';
 export { DomainEventPublishingRepository } from './infrastructure/domain-event-publishing-repository.js';
 export { InMemoryRepository } from './infrastructure/in-memory-repository.js';
 
-// Infrastructure — Integration Events / Outbox
+// Infrastructure — Integration Events
 export { InMemoryIntegrationEventPublisher } from './infrastructure/in-memory-integration-event-publisher.js';
-export { InMemoryOutboxRepository } from './infrastructure/in-memory-outbox-repository.js';
-export { OutboxIntegrationEventPublisher } from './infrastructure/outbox-integration-event-publisher.js';
+
+// Infrastructure — Outbox
+export type {
+  IntegrationEventOutboxRecord,
+  IntegrationEventOutboxRepository,
+  IntegrationEventOutboxRepositorySpy,
+  OutboxStatus,
+  TaskOutboxRecord,
+  TaskOutboxRepository,
+  TaskOutboxRepositorySpy,
+} from './infrastructure/outbox.js';
+export {
+  InMemoryIntegrationEventOutboxRepository,
+  InMemoryTaskOutboxRepository,
+  OutboxIntegrationEventPublisher,
+  OutboxTaskScheduler,
+} from './infrastructure/outbox.js';
 
 // Infrastructure — Tasks
-export { InMemoryTaskQueue } from './infrastructure/in-memory-task-queue.js';
-export { RegistryTaskBus } from './infrastructure/registry-task-bus.js';
+export type { TaskSchedulerSpy } from './infrastructure/in-memory-task-scheduler.js';
+export { InMemoryTaskScheduler } from './infrastructure/in-memory-task-scheduler.js';

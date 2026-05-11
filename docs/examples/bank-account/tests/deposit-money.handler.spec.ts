@@ -1,6 +1,6 @@
 import {
   DomainEvent,
-  DomainEventPublisher,
+  DomainEventBusPublisher,
   DomainEventPublishingRepository,
   RegistryCommandBus,
   ValidationCommandBus,
@@ -23,8 +23,8 @@ describe('DepositMoneyHandler', () => {
   beforeEach(async () => {
     innerRepo = new InMemoryBankAccountRepository();
     published = [];
-    const publisher: DomainEventPublisher = {
-      publish: async events => {
+    const publisher: DomainEventBusPublisher = {
+      publish: async (events: ReadonlyArray<DomainEvent>) => {
         published.push(...events);
       },
     };

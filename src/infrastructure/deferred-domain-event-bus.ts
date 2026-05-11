@@ -1,10 +1,10 @@
 import type { DomainEventBus } from '../application/domain-event-bus.js';
 import type { DomainEventHandler } from '../application/domain-events.js';
-import type { DomainEvent, TypedDomainEvent } from '../domain/domain-event.js';
+import type { DomainEvent } from '../domain/domain-event.js';
 
 export class DeferredDomainEventBus implements DomainEventBus {
   private readonly handlers = new Map<Function, DomainEventHandler<any>[]>();
-  private pending: TypedDomainEvent<Record<string, unknown>>[] = [];
+  private readonly pending = new Map<string, DomainEvent>();
 
   subscribe<TEvent extends DomainEvent>(
     eventType: new (...args: any[]) => TEvent,
@@ -14,13 +14,17 @@ export class DeferredDomainEventBus implements DomainEventBus {
     this.handlers.set(eventType, [...existing, handler]);
   }
 
-  async publish(events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>>): Promise<void> {
-    this.pending = [...this.pending, ...events];
+  async publish(events: ReadonlyArray<DomainEvent>): Promise<void> {
+    for (const event of events) {
+      if (!this.pending.has(event.id)) {
+        this.pending.set(event.id, event);
+      }
+    }
   }
 
-  async flush(): Promise<void> {
-    const events = this.pending;
-    this.pending = [];
+  async dispatch(): Promise<void> {
+    const events = [...this.pending.values()];
+    this.pending.clear();
     for (const event of events) {
       const handlers = this.handlers.get(event.constructor) ?? [];
       for (const handler of handlers) {
@@ -29,7 +33,7 @@ export class DeferredDomainEventBus implements DomainEventBus {
     }
   }
 
-  clear(): void {
-    this.pending = [];
+  discard(): void {
+    this.pending.clear();
   }
 }

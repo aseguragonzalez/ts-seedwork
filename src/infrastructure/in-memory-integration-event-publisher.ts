@@ -1,6 +1,6 @@
-import type { IntegrationEvent, IntegrationEventPublisher } from '../application/integration-event.js';
+import type { IntegrationEvent, IntegrationEventPublisherSpy } from '../application/integration-event.js';
 
-export class InMemoryIntegrationEventPublisher implements IntegrationEventPublisher {
+export class InMemoryIntegrationEventPublisher implements IntegrationEventPublisherSpy {
   private readonly _published: IntegrationEvent[] = [];
 
   get published(): ReadonlyArray<IntegrationEvent> {
@@ -11,7 +11,7 @@ export class InMemoryIntegrationEventPublisher implements IntegrationEventPublis
     this._published.push(...events);
   }
 
-  clear(): void {
+  reset(): void {
     this._published.length = 0;
   }
 }

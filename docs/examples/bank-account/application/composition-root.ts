@@ -1,12 +1,13 @@
 /**
  * Example composition root showing the full bus stack:
- * Validation > Transactional > EventFlush > RegistryCommandBus
+ * Validation > Transactional > EventCoordination > RegistryCommandBus
  *
  * This file is for documentation purposes only.
  */
 import {
   CommandBusBuilder,
   DeferredDomainEventBus,
+  DomainEventPublishingRepository,
   InMemoryIntegrationEventPublisher,
 } from '@aseguragonzalez/ts-seedwork';
 
@@ -16,9 +17,13 @@ import { DepositMoneyHandler } from './deposit-money/deposit-money.handler.js';
 import { OpenAccountHandler } from './open-account/open-account.handler.js';
 
 export function buildCommandBus() {
-  const repository = new InMemoryBankAccountRepository();
   const integrationEventPublisher = new InMemoryIntegrationEventPublisher();
   const domainEventBus = new DeferredDomainEventBus();
+
+  const bankAccountRepository = new DomainEventPublishingRepository(
+    new InMemoryBankAccountRepository(),
+    domainEventBus
+  );
 
   // Subscribe domain event handlers
   domainEventBus.subscribe(
@@ -28,13 +33,13 @@ export function buildCommandBus() {
     new AccountOpenedDomainEventHandler(integrationEventPublisher)
   );
 
-  // Build the command bus stack: Validation > Transactional > EventFlush > Registry
+  // Build the command bus stack: Validation > EventCoordination > Registry
   const commandBus = new CommandBusBuilder()
-    .register(OpenAccountHandler as any, new OpenAccountHandler(repository))
-    .register(DepositMoneyHandler as any, new DepositMoneyHandler(repository))
+    .register(OpenAccountHandler as any, new OpenAccountHandler(bankAccountRepository as any))
+    .register(DepositMoneyHandler as any, new DepositMoneyHandler(bankAccountRepository as any))
     .withValidation()
     // .withTransaction(unitOfWork) — add when using a real DB
-    .withDomainEventFlushing(domainEventBus)
+    .withDomainEventCoordination(domainEventBus)
     .build();
 
   return { commandBus, integrationEventPublisher, domainEventBus };

@@ -1,5 +1,6 @@
 import {
-  DomainEventPublisher,
+  DomainEvent,
+  DomainEventBusPublisher,
   DomainEventPublishingRepository,
   RegistryCommandBus,
   RegistryQueryBus,
@@ -19,7 +20,9 @@ describe('GetBalanceHandler', () => {
 
   beforeEach(async () => {
     innerRepo = new InMemoryBankAccountRepository();
-    const publisher: DomainEventPublisher = { publish: async () => {} };
+    const publisher: DomainEventBusPublisher = {
+      publish: async (_events: ReadonlyArray<DomainEvent>) => {},
+    };
     const repository = new DomainEventPublishingRepository(innerRepo, publisher);
     commandBus = new RegistryCommandBus();
     commandBus.register(OpenAccountCommand, new OpenAccountHandler(repository));
