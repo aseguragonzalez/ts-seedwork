@@ -5,6 +5,9 @@ import type { IntegrationEvent, IntegrationEventPublisher } from '../application
 // Shared status type
 export type OutboxStatus = 'pending' | 'published' | 'failed';
 
+// Task-specific status type
+export type TaskOutboxStatus = 'pending' | 'delivered' | 'failed';
+
 // Integration Event Outbox
 export interface IntegrationEventOutboxRecord {
   readonly id: string;
@@ -83,7 +86,7 @@ export class InMemoryIntegrationEventOutboxRepository implements IntegrationEven
 export interface TaskOutboxRecord {
   readonly id: string;
   readonly task: BackgroundTask;
-  readonly status: OutboxStatus;
+  readonly status: TaskOutboxStatus;
   readonly attempts: number;
   readonly lastError?: string;
   readonly createdAt: Date;
@@ -135,7 +138,7 @@ export class InMemoryTaskOutboxRepository implements TaskOutboxRepositorySpy {
   async markAsDelivered(id: string): Promise<void> {
     const r = this.records.get(id);
     if (r) {
-      this.records.set(id, { ...r, status: 'published', deliveredAt: new Date() });
+      this.records.set(id, { ...r, status: 'delivered', deliveredAt: new Date() });
     }
   }
 

@@ -7,7 +7,7 @@ export class DeferredDomainEventBus implements DomainEventBus {
   private readonly pending = new Map<string, DomainEvent>();
 
   subscribe<TEvent extends DomainEvent>(
-    eventType: new (...args: any[]) => TEvent,
+    eventType: Function & { prototype: TEvent },
     handler: DomainEventHandler<TEvent>
   ): void {
     const existing = this.handlers.get(eventType) ?? [];

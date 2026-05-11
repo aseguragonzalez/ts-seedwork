@@ -11,9 +11,12 @@ import {
   InMemoryIntegrationEventPublisher,
 } from '@aseguragonzalez/ts-seedwork';
 
+import { AccountOpened } from '../domain/events/account-opened.js';
 import { InMemoryBankAccountRepository } from '../infrastructure/in-memory-bank-account.repository.js';
 import { AccountOpenedDomainEventHandler } from './account-opened.domain-event-handler.js';
+import { DepositMoneyCommand } from './deposit-money/deposit-money.command.js';
 import { DepositMoneyHandler } from './deposit-money/deposit-money.handler.js';
+import { OpenAccountCommand } from './open-account/open-account.command.js';
 import { OpenAccountHandler } from './open-account/open-account.handler.js';
 
 export function buildCommandBus() {
@@ -26,17 +29,12 @@ export function buildCommandBus() {
   );
 
   // Subscribe domain event handlers
-  domainEventBus.subscribe(
-    // AccountOpened is dynamically imported here but in production
-    // you'd import it directly
-    Object as any,
-    new AccountOpenedDomainEventHandler(integrationEventPublisher)
-  );
+  domainEventBus.subscribe(AccountOpened, new AccountOpenedDomainEventHandler(integrationEventPublisher));
 
   // Build the command bus stack: Validation > EventCoordination > Registry
   const commandBus = new CommandBusBuilder()
-    .register(OpenAccountHandler as any, new OpenAccountHandler(bankAccountRepository as any))
-    .register(DepositMoneyHandler as any, new DepositMoneyHandler(bankAccountRepository as any))
+    .register(OpenAccountCommand, new OpenAccountHandler(bankAccountRepository))
+    .register(DepositMoneyCommand, new DepositMoneyHandler(bankAccountRepository))
     .withValidation()
     // .withTransaction(unitOfWork) — add when using a real DB
     .withDomainEventCoordination(domainEventBus)

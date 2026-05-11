@@ -7,7 +7,7 @@ export interface DomainEventBusPublisher {
 
 export interface DomainEventBusSubscriber {
   subscribe<TEvent extends DomainEvent>(
-    eventType: new (...args: any[]) => TEvent,
+    eventType: Function & { prototype: TEvent },
     handler: DomainEventHandler<TEvent>
   ): void;
 }

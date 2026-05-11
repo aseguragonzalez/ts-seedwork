@@ -4,7 +4,7 @@ export class InMemoryIntegrationEventPublisher implements IntegrationEventPublis
   private readonly _published: IntegrationEvent[] = [];
 
   get published(): ReadonlyArray<IntegrationEvent> {
-    return this._published;
+    return [...this._published];
   }
 
   async publish(events: ReadonlyArray<IntegrationEvent>): Promise<void> {

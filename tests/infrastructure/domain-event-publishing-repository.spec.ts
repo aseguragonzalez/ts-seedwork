@@ -1,4 +1,10 @@
-import { DomainEvent, DomainEventBusPublisher, DomainEventPublishingRepository, Repository } from '@src';
+import {
+  DomainEvent,
+  DomainEventBusPublisher,
+  DomainEventPublishingRepository,
+  Repository,
+  TypedDomainEvent,
+} from '@src';
 import { AggregateRoot } from '@src/domain/aggregate-root';
 import { BaseDomainEvent } from '@src/domain/domain-event';
 
@@ -23,8 +29,8 @@ class TestAggregate extends AggregateRoot<TestId> {
   static empty(id: TestId): TestAggregate {
     return new TestAggregate(id);
   }
-  private constructor(id: TestId, events: ReadonlyArray<DomainEvent> = []) {
-    super(id, events as any);
+  private constructor(id: TestId, events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = []) {
+    super(id, events);
   }
 }
 

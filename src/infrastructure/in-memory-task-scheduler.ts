@@ -12,7 +12,7 @@ export class InMemoryTaskScheduler implements TaskSchedulerSpy {
   private readonly handlers = new Map<string, TaskHandler>();
 
   get scheduled(): ReadonlyArray<BackgroundTask> {
-    return this._scheduled;
+    return [...this._scheduled];
   }
 
   register(taskType: string, handler: TaskHandler): void {
