@@ -1,4 +1,10 @@
-import { DomainEventPublisher, DomainEventPublishingRepository, Repository, TypedDomainEvent } from '@src';
+import {
+  DomainEvent,
+  DomainEventBusPublisher,
+  DomainEventPublishingRepository,
+  Repository,
+  TypedDomainEvent,
+} from '@src';
 import { AggregateRoot } from '@src/domain/aggregate-root';
 import { BaseDomainEvent } from '@src/domain/domain-event';
 
@@ -41,10 +47,10 @@ class InMemoryTestRepository implements Repository<TestId, TestAggregate> {
   }
 }
 
-function makePublisher(): { publisher: DomainEventPublisher; captured: TypedDomainEvent<Record<string, unknown>>[] } {
-  const captured: TypedDomainEvent<Record<string, unknown>>[] = [];
-  const publisher: DomainEventPublisher = {
-    publish: async events => {
+function makePublisher(): { publisher: DomainEventBusPublisher; captured: DomainEvent[] } {
+  const captured: DomainEvent[] = [];
+  const publisher: DomainEventBusPublisher = {
+    publish: async (events: ReadonlyArray<DomainEvent>) => {
       captured.push(...events);
     },
   };
@@ -80,7 +86,7 @@ describe('DomainEventPublishingRepository', () => {
   it('persists the aggregate before publishing events', async () => {
     const inner = new InMemoryTestRepository();
     const order: string[] = [];
-    const publisher: DomainEventPublisher = {
+    const publisher: DomainEventBusPublisher = {
       publish: async () => {
         order.push('publish');
       },

@@ -13,7 +13,7 @@ class GetUserQuery implements Query {
 }
 
 class GetUserHandler implements QueryHandler<GetUserQuery, UserData> {
-  async execute(query: GetUserQuery): Promise<Maybe<UserData>> {
+  async handle(query: GetUserQuery): Promise<Maybe<UserData>> {
     return Maybe.just({ id: query.id, name: 'Alice' });
   }
 }
@@ -41,7 +41,7 @@ describe('RegistryQueryBus', () => {
     const bus = new RegistryQueryBus();
 
     class AltGetUserHandler implements QueryHandler<GetUserQuery, UserData> {
-      async execute(query: GetUserQuery): Promise<Maybe<UserData>> {
+      async handle(query: GetUserQuery): Promise<Maybe<UserData>> {
         return Maybe.just({ id: query.id, name: 'Bob' });
       }
     }

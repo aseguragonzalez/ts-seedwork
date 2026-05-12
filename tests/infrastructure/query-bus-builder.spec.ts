@@ -13,14 +13,14 @@ class GetSomething implements Query {
 
 class GetSomethingHandler implements QueryHandler<GetSomething, string> {
   public calls = 0;
-  async execute(_query: GetSomething): Promise<Maybe<string>> {
+  async handle(_query: GetSomething): Promise<Maybe<string>> {
     this.calls++;
     return Maybe.just('result');
   }
 }
 
 class NotFoundHandler implements QueryHandler<GetSomething, string> {
-  async execute(_query: GetSomething): Promise<Maybe<string>> {
+  async handle(_query: GetSomething): Promise<Maybe<string>> {
     return Maybe.nothing();
   }
 }

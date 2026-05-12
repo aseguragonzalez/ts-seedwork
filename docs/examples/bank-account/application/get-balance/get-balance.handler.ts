@@ -8,7 +8,7 @@ import { BalanceData } from './get-balance.response.js';
 export class GetBalanceHandler implements QueryHandler<GetBalanceQuery, BalanceData> {
   constructor(private readonly repository: BankAccountRepository) {}
 
-  async execute(query: GetBalanceQuery): Promise<Maybe<BalanceData>> {
+  async handle(query: GetBalanceQuery): Promise<Maybe<BalanceData>> {
     const id = new BankAccountId(query.accountId);
     const account = await this.repository.findById(id);
     if (!account) {

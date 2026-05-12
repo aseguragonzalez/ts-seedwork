@@ -10,7 +10,7 @@ class CreateUserHandler implements CommandHandler<CreateUserCommand> {
   public executed = false;
   public lastCommand: CreateUserCommand | undefined;
 
-  async execute(command: CreateUserCommand): Promise<void> {
+  async handle(command: CreateUserCommand): Promise<void> {
     this.executed = true;
     this.lastCommand = command;
   }

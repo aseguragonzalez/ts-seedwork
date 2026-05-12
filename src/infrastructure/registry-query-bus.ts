@@ -6,7 +6,7 @@ export class RegistryQueryBus implements QueryBus {
   private readonly handlers = new Map<Function, HandlerForQuery>();
 
   public register<TQuery extends Query, TResult>(
-    queryType: new (..._args: any[]) => TQuery,
+    queryType: new (..._: any[]) => TQuery,
     handler: QueryHandler<TQuery, TResult>
   ): void {
     this.handlers.set(queryType, handler as HandlerForQuery);
@@ -17,6 +17,6 @@ export class RegistryQueryBus implements QueryBus {
     if (!handler) {
       throw new Error(`No handler registered for query: ${query.constructor.name}`);
     }
-    return handler.execute(query) as Promise<Maybe<TResult>>;
+    return handler.handle(query) as Promise<Maybe<TResult>>;
   }
 }

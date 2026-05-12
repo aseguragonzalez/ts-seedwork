@@ -1,4 +1,4 @@
-import type { DomainEventPublisher } from '../application/domain-events.js';
+import type { DomainEventBusPublisher } from '../application/domain-event-bus.js';
 import type { AggregateRoot } from '../domain/aggregate-root.js';
 import type { Repository } from '../domain/repository.js';
 
@@ -8,7 +8,7 @@ export class DomainEventPublishingRepository<TId, TAggregate extends AggregateRo
 > {
   constructor(
     private readonly inner: Repository<TId, TAggregate>,
-    private readonly publisher: DomainEventPublisher
+    private readonly eventBus: DomainEventBusPublisher
   ) {}
 
   async findById(id: TId): Promise<TAggregate | null> {
@@ -17,7 +17,7 @@ export class DomainEventPublishingRepository<TId, TAggregate extends AggregateRo
 
   async save(entity: TAggregate): Promise<void> {
     await this.inner.save(entity);
-    await this.publisher.publish(entity.getDomainEvents());
+    await this.eventBus.publish(entity.getDomainEvents());
   }
 
   async deleteById(id: TId): Promise<void> {

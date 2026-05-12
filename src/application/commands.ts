@@ -5,10 +5,10 @@ export interface ResultError {
 
 export class Result {
   readonly errors: ReadonlyArray<ResultError>;
-  private readonly _isOk: boolean;
+  private readonly ok: boolean;
 
   private constructor(isOk: boolean, errors: ReadonlyArray<ResultError>) {
-    this._isOk = isOk;
+    this.ok = isOk;
     this.errors = Object.freeze([...errors]);
     Object.freeze(this);
   }
@@ -22,11 +22,11 @@ export class Result {
   }
 
   isOk(): boolean {
-    return this._isOk;
+    return this.ok;
   }
 
   isFail(): boolean {
-    return !this._isOk;
+    return !this.ok;
   }
 }
 
@@ -35,7 +35,7 @@ export interface Command {
 }
 
 export interface CommandHandler<TCommand extends Command> {
-  execute(command: TCommand): Promise<void>;
+  handle(command: TCommand): Promise<void>;
 }
 
 export interface CommandBus {
