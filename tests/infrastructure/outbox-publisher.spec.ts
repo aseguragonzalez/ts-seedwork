@@ -1,7 +1,5 @@
-import type { BackgroundTask, IntegrationEvent } from '@src';
-import { BaseBackgroundTask, BaseIntegrationEvent } from '@src';
-import type { IntegrationEventOutboxRepository, TaskOutboxRepository } from '@src/infrastructure/outbox';
-import { OutboxIntegrationEventPublisher, OutboxTaskScheduler } from '@src/infrastructure/outbox';
+import type { BackgroundTask, IntegrationEvent, IntegrationEventOutboxRepository, TaskOutboxRepository } from '@src';
+import { BaseBackgroundTask, BaseIntegrationEvent, OutboxIntegrationEventPublisher, OutboxTaskScheduler } from '@src';
 
 class OrderCreatedEvent extends BaseIntegrationEvent {
   constructor(aggregateId: string, correlationId: string) {
