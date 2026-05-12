@@ -4,7 +4,7 @@ import { InMemoryTaskScheduler } from '@src/infrastructure/in-memory-task-schedu
 
 class SendEmailTask extends BaseBackgroundTask {
   constructor(correlationId: string, id?: string) {
-    super('send-email', { to: 'test@example.com' }, correlationId, undefined, id);
+    super('send-email', { to: 'test@example.com' }, correlationId, undefined, undefined, id);
   }
 }
 
