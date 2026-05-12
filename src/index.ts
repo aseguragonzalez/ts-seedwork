@@ -16,7 +16,7 @@ export type {
   DomainEventBusPublisher,
   DomainEventBusSubscriber,
 } from './application/domain-event-bus.js';
-export type { DomainEventHandler } from './application/domain-events.js';
+export type { DomainEventHandler } from './application/domain-event-bus.js';
 
 // Application — Integration Events
 export type {

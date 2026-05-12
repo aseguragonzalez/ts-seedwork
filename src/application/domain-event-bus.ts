@@ -1,5 +1,8 @@
 import type { DomainEvent } from '../domain/domain-event.js';
-import type { DomainEventHandler } from './domain-events.js';
+
+export interface DomainEventHandler<TEvent extends DomainEvent = DomainEvent> {
+  handle(event: TEvent): Promise<void>;
+}
 
 export interface DomainEventBusPublisher {
   publish(events: ReadonlyArray<DomainEvent>): Promise<void>;

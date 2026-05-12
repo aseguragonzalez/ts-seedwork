@@ -1,5 +1,4 @@
-import type { DomainEventBus } from '../application/domain-event-bus.js';
-import type { DomainEventHandler } from '../application/domain-events.js';
+import type { DomainEventBus, DomainEventHandler } from '../application/domain-event-bus.js';
 import type { DomainEvent } from '../domain/domain-event.js';
 
 export class DeferredDomainEventBus implements DomainEventBus {
