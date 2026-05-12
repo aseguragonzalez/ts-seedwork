@@ -2,6 +2,7 @@ import type { Command, CommandBus, CommandHandler } from '@src';
 import { DomainError, Result, ValidationErrors } from '@src';
 import type { UnitOfWork } from '@src/domain/unit-of-work';
 import { CommandBusBuilder } from '@src/infrastructure/command-bus-builder';
+import { DeferredDomainEventBus } from '@src/infrastructure/deferred-domain-event-bus';
 
 class DoSomething implements Command {
   constructor(public readonly valid: boolean = true) {}
@@ -239,6 +240,38 @@ describe('CommandBusBuilder', () => {
       await bus.dispatch(new DoSomething());
 
       expect(order).toEqual([1, 2, 3]);
+    });
+  });
+
+  describe('withDomainEventCoordination', () => {
+    it('dispatches domain events when command succeeds', async () => {
+      const handler = new DoSomethingHandler();
+      const eventBus = new DeferredDomainEventBus();
+      jest.spyOn(eventBus, 'dispatch');
+      jest.spyOn(eventBus, 'discard');
+      const bus = new CommandBusBuilder().register(DoSomething, handler).withDomainEventCoordination(eventBus).build();
+
+      const result = await bus.dispatch(new DoSomething());
+
+      expect(result.isOk()).toBe(true);
+      expect(eventBus.dispatch).toHaveBeenCalledTimes(1);
+      expect(eventBus.discard).not.toHaveBeenCalled();
+    });
+
+    it('discards domain events when command returns DomainError', async () => {
+      const eventBus = new DeferredDomainEventBus();
+      jest.spyOn(eventBus, 'dispatch');
+      jest.spyOn(eventBus, 'discard');
+      const bus = new CommandBusBuilder()
+        .register(DoSomething, new DomainErrorHandler())
+        .withDomainEventCoordination(eventBus)
+        .build();
+
+      const result = await bus.dispatch(new DoSomething());
+
+      expect(result.isFail()).toBe(true);
+      expect(eventBus.discard).toHaveBeenCalledTimes(1);
+      expect(eventBus.dispatch).not.toHaveBeenCalled();
     });
   });
 });
