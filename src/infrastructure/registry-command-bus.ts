@@ -8,7 +8,7 @@ export class RegistryCommandBus implements CommandBus {
   private readonly handlers = new Map<Function, HandlerForCommand>();
 
   public register<TCommand extends Command>(
-    commandType: new (..._args: any[]) => TCommand,
+    commandType: new (..._: any[]) => TCommand,
     handler: CommandHandler<TCommand>
   ): void {
     this.handlers.set(commandType, handler as HandlerForCommand);

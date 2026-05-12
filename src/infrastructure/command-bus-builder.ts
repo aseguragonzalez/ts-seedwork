@@ -11,7 +11,7 @@ export class CommandBusBuilder {
   private readonly steps: Array<(inner: CommandBus) => CommandBus> = [];
 
   register<TCommand extends Command>(
-    commandType: new (..._args: any[]) => TCommand,
+    commandType: new (..._: any[]) => TCommand,
     handler: CommandHandler<TCommand>
   ): this {
     this.registry.register(commandType, handler);

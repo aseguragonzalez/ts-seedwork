@@ -7,7 +7,7 @@ export class QueryBusBuilder {
   private readonly steps: Array<(inner: QueryBus) => QueryBus> = [];
 
   register<TQuery extends Query, TResult>(
-    queryType: new (..._args: any[]) => TQuery,
+    queryType: new (..._: any[]) => TQuery,
     handler: QueryHandler<TQuery, TResult>
   ): this {
     this.registry.register(queryType, handler);

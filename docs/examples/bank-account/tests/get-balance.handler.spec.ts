@@ -21,7 +21,7 @@ describe('GetBalanceHandler', () => {
   beforeEach(async () => {
     innerRepo = new InMemoryBankAccountRepository();
     const publisher: DomainEventBusPublisher = {
-      publish: async (_events: ReadonlyArray<DomainEvent>) => {},
+      publish: async (_: ReadonlyArray<DomainEvent>) => {},
     };
     const repository = new DomainEventPublishingRepository(innerRepo, publisher);
     commandBus = new RegistryCommandBus();

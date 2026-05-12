@@ -8,11 +8,11 @@ export interface TaskSchedulerSpy extends TaskScheduler {
 }
 
 export class InMemoryTaskScheduler implements TaskSchedulerSpy {
-  private readonly _scheduled: BackgroundTask[] = [];
+  private readonly tasks: BackgroundTask[] = [];
   private readonly handlers = new Map<string, TaskHandler>();
 
   get scheduled(): ReadonlyArray<BackgroundTask> {
-    return [...this._scheduled];
+    return [...this.tasks];
   }
 
   register(taskType: string, handler: TaskHandler): void {
@@ -20,11 +20,11 @@ export class InMemoryTaskScheduler implements TaskSchedulerSpy {
   }
 
   async schedule(task: BackgroundTask): Promise<void> {
-    this._scheduled.push(task);
+    this.tasks.push(task);
   }
 
   async executeScheduled(): Promise<void> {
-    for (const task of this._scheduled) {
+    for (const task of this.tasks) {
       const handler = this.handlers.get(task.type);
       if (handler) {
         await handler.handle(task);
@@ -33,6 +33,6 @@ export class InMemoryTaskScheduler implements TaskSchedulerSpy {
   }
 
   reset(): void {
-    this._scheduled.length = 0;
+    this.tasks.length = 0;
   }
 }

@@ -1,17 +1,17 @@
 import type { IntegrationEvent, IntegrationEventPublisherSpy } from '../application/integration-event.js';
 
 export class InMemoryIntegrationEventPublisher implements IntegrationEventPublisherSpy {
-  private readonly _published: IntegrationEvent[] = [];
+  private readonly events: IntegrationEvent[] = [];
 
   get published(): ReadonlyArray<IntegrationEvent> {
-    return [...this._published];
+    return [...this.events];
   }
 
-  async publish(events: ReadonlyArray<IntegrationEvent>): Promise<void> {
-    this._published.push(...events);
+  async publish(incoming: ReadonlyArray<IntegrationEvent>): Promise<void> {
+    this.events.push(...incoming);
   }
 
   reset(): void {
-    this._published.length = 0;
+    this.events.length = 0;
   }
 }
