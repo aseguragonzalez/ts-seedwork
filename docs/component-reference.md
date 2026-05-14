@@ -187,7 +187,7 @@ res.status(204).send();
 ### `Command` / `CommandBus` / `CommandHandler`
 
 - **`Command`** — marker interface; implemented by command DTOs. Requires `validate(): void` — the compiler enforces the method; calling it is opt-in via `ValidationCommandBus`.
-- **`CommandHandler<TCommand>`** — `execute(command: TCommand): Promise<void>`.
+- **`CommandHandler<TCommand>`** — `handle(command: TCommand): Promise<void>`.
 - **`CommandBus`** — `dispatch(command: Command): Promise<Result>`. The entry point for write operations.
 - **Usage:** One command class and one handler per write use case. Commands carry intent and primitives — no domain objects at the port boundary when avoidable.
 
@@ -213,17 +213,17 @@ return res.json(result.value);
 ### `Query` / `QueryBus` / `QueryHandler`
 
 - **`Query`** — interface for query DTOs. Requires `validate(): void` — implement with a no-op body when no validation is needed. The compiler enforces the method exists; calling it is the developer's responsibility (opt-in via `ValidationQueryBus`).
-- **`QueryHandler<TQuery, T>`** — `execute(query: TQuery): Promise<Maybe<T>>`.
+- **`QueryHandler<TQuery, T>`** — `handle(query: TQuery): Promise<Maybe<T>>`.
 - **`QueryBus`** — `ask<T>(query: Query): Promise<Maybe<T>>`. Entry point for reads.
 - **Usage:** One query class and one handler per read use case. Handlers return plain projection types — never domain entities.
 
 ---
 
-### `DomainEventPublisher`
+### `DomainEventBusPublisher` / `DomainEventBusSubscriber` / `DomainEventBus`
 
-- **Role:** Outbound port for publishing domain events. Defined in the application layer; implemented in infrastructure.
-- **Method:** `publish(events: ReadonlyArray<DomainEvent>): Promise<void>`.
-- **Usage:** Do **not** inject this into command handlers — event publishing should be transparent via `DomainEventPublishingRepository`. Inject it into infrastructure components (e.g. the repository decorator or a message broker adapter).
+- **`DomainEventBusPublisher`** — outbound port: `publish(events: ReadonlyArray<DomainEvent>): Promise<void>`. Injected into `DomainEventPublishingRepository`. Do **not** inject into command handlers.
+- **`DomainEventBusSubscriber`** — subscription port: `subscribe(eventType, handler)`. Used in the composition root to register `DomainEventHandler` instances.
+- **`DomainEventBus`** — extends both publisher and subscriber, adding `dispatch(): Promise<void>` (flush buffered events) and `discard(): void` (drop buffered events). `DeferredDomainEventBus` is the in-process implementation.
 
 ---
 
@@ -272,17 +272,17 @@ const queryBus = new ValidationQueryBus(new RegistryQueryBus());
 ### `DomainEventPublishingRepository<ID, T>`
 
 - **Role:** `Repository` decorator that publishes domain events after every `save`. Keeps use-case handlers free of event-publishing logic.
-- **Usage:** Wrap any `Repository` implementation with a `DomainEventPublisher`. The decorator calls `publisher.publish(entity.getDomainEvents())` after the inner `save` completes. `delete` and `getById` delegate without side effects — if deletion has domain significance, model it as an aggregate operation and call `save` before (or instead of) `delete`.
+- **Usage:** Wrap any `Repository` implementation with a `DomainEventBusPublisher`. The decorator calls `publisher.publish(entity.getDomainEvents())` after the inner `save` completes. `delete` and `getById` delegate without side effects — if deletion has domain significance, model it as an aggregate operation and call `save` before (or instead of) `delete`.
 
 ```typescript
-const publisher: DomainEventPublisher = new MyMessageBrokerPublisher();
+const publisher: DomainEventBusPublisher = new DeferredDomainEventBus();
 const repository = new DomainEventPublishingRepository(new BankAccountRepositoryImpl(), publisher);
 
 // Handler stays clean — no event publishing, no knowledge of the bus:
 class DepositMoneyHandler implements CommandHandler<DepositMoneyCommand> {
   constructor(private readonly repository: BankAccountRepository) {}
 
-  async execute(command: DepositMoneyCommand): Promise<void> {
+  async handle(command: DepositMoneyCommand): Promise<void> {
     const account = await this.repository.findById(new BankAccountId(command.accountId));
     const updated = account.deposit(new Money(command.amount, command.currency));
     await this.repository.save(updated); // decorator publishes events transparently

@@ -58,7 +58,7 @@ Pre-release dist-tags are removed automatically when the pull request closes. Se
 
 See [Getting Started](docs/getting-started.md) for a step-by-step walkthrough: define a value object, build an aggregate root, create a command handler, and wire a bus.
 
-The [Component Reference](docs/component-reference.md) covers every class and interface in detail. A complete working example lives in [`docs/examples/bank-account/`](docs/examples/bank-account/).
+The [Component Reference](docs/component-reference.md) covers every class and interface in detail.
 
 ## What's included
 
@@ -99,6 +99,7 @@ Comprehensive guides are available in the [`docs/`](docs/) directory:
 - [Component Reference](docs/component-reference.md)
 - [Best Practices](docs/best-practices.md)
 - [Coding Standards](docs/coding-standards.md)
+- [Changelog](CHANGELOG.md)
 
 A complete [Bank Account example](docs/examples/bank-account/) demonstrates all patterns end-to-end.
 
