@@ -58,16 +58,16 @@ Pre-release dist-tags are removed automatically when the pull request closes. Se
 
 See [Getting Started](docs/getting-started.md) for a step-by-step walkthrough: define a value object, build an aggregate root, create a command handler, and wire a bus.
 
-The [Component Reference](docs/component-reference.md) covers every class and interface in detail. A complete working example lives in [`docs/examples/bank-account/`](docs/examples/bank-account/).
+The [Component Reference](docs/component-reference.md) covers every class and interface in detail.
 
 ## What's included
 
-| Layer              | Components                                                                                                                                                                                   |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Shared**         | `Logger`                                                                                                                                                                                     |
-| **Domain**         | `Entity`, `AggregateRoot`, `ValueObject`, `BaseDomainEvent`, `Repository`, `UnitOfWork`, `DomainError`                                                                                       |
-| **Application**    | `Command`/`CommandBus`/`CommandHandler`, `Query`/`QueryBus`/`QueryHandler`, `Result`, `Maybe`, `DomainEventPublisher`, `DomainEventHandler`                                                  |
-| **Infrastructure** | `RegistryCommandBus`, `RegistryQueryBus`, `TransactionalCommandBus`, `ValidationCommandBus`, `ValidationQueryBus`, `DomainEventPublishingRepository`, `CommandBusBuilder`, `QueryBusBuilder` |
+| Layer              | Components                                                                                                                                                                                                                                                                                                |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Shared**         | `Logger`                                                                                                                                                                                                                                                                                                  |
+| **Domain**         | `Entity`, `AggregateRoot`, `ValueObject`, `BaseDomainEvent`, `Repository`, `UnitOfWork`, `DomainError`                                                                                                                                                                                                    |
+| **Application**    | `Command`/`CommandBus`/`CommandHandler`, `Query`/`QueryBus`/`QueryHandler`, `Result`, `Maybe`, `DomainEventBusPublisher`/`DomainEventBusSubscriber`/`DomainEventBus`, `DomainEventHandler`, `IntegrationEvent`/`IntegrationEventHandler`/`IntegrationEventPublisher`, `BackgroundTask`/`TaskScheduler`    |
+| **Infrastructure** | `RegistryCommandBus`, `RegistryQueryBus`, `TransactionalCommandBus`, `ValidationCommandBus`, `ValidationQueryBus`, `DomainEventCoordinatorCommandBus`, `DeferredDomainEventBus`, `DomainEventPublishingRepository`, `InMemoryRepository`, `InMemoryTaskScheduler`, `CommandBusBuilder`, `QueryBusBuilder` |
 
 ## Built with
 
@@ -93,11 +93,15 @@ If you plan to contribute, read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for t
 
 ## Documentation
 
-- [Getting Started](docs/getting-started.md) — step-by-step guide for building with this library
-- [Component Reference](docs/component-reference.md) — every class, interface, and infrastructure component with usage examples
-- [Best Practices](docs/best-practices.md) — patterns and idioms for effective use
-- [Coding Standards](docs/coding-standards.md) — conventions aligned with DDD and Clean Architecture
+Comprehensive guides are available in the [`docs/`](docs/) directory:
+
+- [Getting Started](docs/getting-started.md)
+- [Component Reference](docs/component-reference.md)
+- [Best Practices](docs/best-practices.md)
+- [Coding Standards](docs/coding-standards.md)
 - [Changelog](CHANGELOG.md)
+
+A complete [Bank Account example](docs/examples/bank-account/) demonstrates all patterns end-to-end.
 
 ## Requirements
 
