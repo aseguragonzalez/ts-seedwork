@@ -1,41 +1,43 @@
-/**
- * Example composition root showing the full bus stack:
- * Validation > Transactional > EventFlush > RegistryCommandBus
- *
- * This file is for documentation purposes only.
- */
 import {
   CommandBusBuilder,
   DeferredDomainEventBus,
+  DomainEventPublishingRepository,
   InMemoryIntegrationEventPublisher,
+  QueryBusBuilder,
 } from '@aseguragonzalez/ts-seedwork';
 
+import { AccountOpened } from '../domain/events/account-opened.js';
 import { InMemoryBankAccountRepository } from '../infrastructure/in-memory-bank-account.repository.js';
 import { AccountOpenedDomainEventHandler } from './account-opened.domain-event-handler.js';
+import { DepositMoneyCommand } from './deposit-money/deposit-money.command.js';
 import { DepositMoneyHandler } from './deposit-money/deposit-money.handler.js';
+import { GetBalanceHandler } from './get-balance/get-balance.handler.js';
+import { GetBalanceQuery } from './get-balance/get-balance.query.js';
+import { OpenAccountCommand } from './open-account/open-account.command.js';
 import { OpenAccountHandler } from './open-account/open-account.handler.js';
+import { WithdrawMoneyCommand } from './withdraw-money/withdraw-money.command.js';
+import { WithdrawMoneyHandler } from './withdraw-money/withdraw-money.handler.js';
 
 export function buildCommandBus() {
-  const repository = new InMemoryBankAccountRepository();
   const integrationEventPublisher = new InMemoryIntegrationEventPublisher();
   const domainEventBus = new DeferredDomainEventBus();
+  const bankAccountRepository = new InMemoryBankAccountRepository();
+  const publishingRepository = new DomainEventPublishingRepository(bankAccountRepository, domainEventBus);
 
-  // Subscribe domain event handlers
-  domainEventBus.subscribe(
-    // AccountOpened is dynamically imported here but in production
-    // you'd import it directly
-    Object as any,
-    new AccountOpenedDomainEventHandler(integrationEventPublisher)
-  );
+  domainEventBus.subscribe(AccountOpened, new AccountOpenedDomainEventHandler(integrationEventPublisher));
 
-  // Build the command bus stack: Validation > Transactional > EventFlush > Registry
   const commandBus = new CommandBusBuilder()
-    .register(OpenAccountHandler as any, new OpenAccountHandler(repository))
-    .register(DepositMoneyHandler as any, new DepositMoneyHandler(repository))
+    .register(OpenAccountCommand, new OpenAccountHandler(publishingRepository))
+    .register(DepositMoneyCommand, new DepositMoneyHandler(publishingRepository))
+    .register(WithdrawMoneyCommand, new WithdrawMoneyHandler(publishingRepository))
     .withValidation()
-    // .withTransaction(unitOfWork) — add when using a real DB
-    .withDomainEventFlushing(domainEventBus)
+    .withDomainEventCoordination(domainEventBus)
     .build();
 
-  return { commandBus, integrationEventPublisher, domainEventBus };
+  const queryBus = new QueryBusBuilder()
+    .register(GetBalanceQuery, new GetBalanceHandler(bankAccountRepository))
+    .withValidation()
+    .build();
+
+  return { commandBus, queryBus, integrationEventPublisher, domainEventBus };
 }
