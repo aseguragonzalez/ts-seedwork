@@ -62,12 +62,12 @@ The [Component Reference](docs/component-reference.md) covers every class and in
 
 ## What's included
 
-| Layer              | Components                                                                                                                                                                                   |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Shared**         | `Logger`                                                                                                                                                                                     |
-| **Domain**         | `Entity`, `AggregateRoot`, `ValueObject`, `BaseDomainEvent`, `Repository`, `UnitOfWork`, `DomainError`                                                                                       |
-| **Application**    | `Command`/`CommandBus`/`CommandHandler`, `Query`/`QueryBus`/`QueryHandler`, `Result`, `Maybe`, `DomainEventPublisher`, `DomainEventHandler`                                                  |
-| **Infrastructure** | `RegistryCommandBus`, `RegistryQueryBus`, `TransactionalCommandBus`, `ValidationCommandBus`, `ValidationQueryBus`, `DomainEventPublishingRepository`, `CommandBusBuilder`, `QueryBusBuilder` |
+| Layer              | Components                                                                                                                                                                                                                                                                                                |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Shared**         | `Logger`                                                                                                                                                                                                                                                                                                  |
+| **Domain**         | `Entity`, `AggregateRoot`, `ValueObject`, `BaseDomainEvent`, `Repository`, `UnitOfWork`, `DomainError`                                                                                                                                                                                                    |
+| **Application**    | `Command`/`CommandBus`/`CommandHandler`, `Query`/`QueryBus`/`QueryHandler`, `Result`, `Maybe`, `DomainEventBusPublisher`/`DomainEventBusSubscriber`/`DomainEventBus`, `DomainEventHandler`, `IntegrationEvent`/`IntegrationEventHandler`/`IntegrationEventPublisher`, `BackgroundTask`/`TaskScheduler`    |
+| **Infrastructure** | `RegistryCommandBus`, `RegistryQueryBus`, `TransactionalCommandBus`, `ValidationCommandBus`, `ValidationQueryBus`, `DomainEventCoordinatorCommandBus`, `DeferredDomainEventBus`, `DomainEventPublishingRepository`, `InMemoryRepository`, `InMemoryTaskScheduler`, `CommandBusBuilder`, `QueryBusBuilder` |
 
 ## Built with
 
@@ -93,11 +93,14 @@ If you plan to contribute, read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for t
 
 ## Documentation
 
-- [Getting Started](docs/getting-started.md) — step-by-step guide for building with this library
-- [Component Reference](docs/component-reference.md) — every class, interface, and infrastructure component with usage examples
-- [Best Practices](docs/best-practices.md) — patterns and idioms for effective use
-- [Coding Standards](docs/coding-standards.md) — conventions aligned with DDD and Clean Architecture
-- [Changelog](CHANGELOG.md)
+Comprehensive guides are available in the [`docs/`](docs/) directory:
+
+- [Getting Started](docs/getting-started.md)
+- [Component Reference](docs/component-reference.md)
+- [Best Practices](docs/best-practices.md)
+- [Coding Standards](docs/coding-standards.md)
+
+A complete [Bank Account example](docs/examples/bank-account/) demonstrates all patterns end-to-end.
 
 ## Requirements
 
@@ -117,6 +120,15 @@ This package draws on the following literature and on the experience of building
 - Robert C. Martin, _Clean Architecture: A Craftsman's Guide to Software Structure and Design_ [3]
 - .NET Microservices: Architecture for Containerized .NET Applications [4]
 - Architecture Patterns with Python, Harry Percival & Bob Gregory [5]
+
+## Sibling Packages
+
+This library is part of a family of seedwork packages implementing the same DDD/CQRS patterns:
+
+| Package                                                               | Language |
+| --------------------------------------------------------------------- | -------- |
+| [python-seedwork](https://github.com/aseguragonzalez/python-seedwork) | Python   |
+| [php-seedwork](https://github.com/aseguragonzalez/php-seedwork)       | PHP      |
 
 ## License
 
