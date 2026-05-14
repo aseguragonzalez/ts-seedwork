@@ -121,15 +121,6 @@ This package draws on the following literature and on the experience of building
 - .NET Microservices: Architecture for Containerized .NET Applications [4]
 - Architecture Patterns with Python, Harry Percival & Bob Gregory [5]
 
-## Sibling Packages
-
-This library is part of a family of seedwork packages implementing the same DDD/CQRS patterns:
-
-| Package                                                               | Language |
-| --------------------------------------------------------------------- | -------- |
-| [python-seedwork](https://github.com/aseguragonzalez/python-seedwork) | Python   |
-| [php-seedwork](https://github.com/aseguragonzalez/php-seedwork)       | PHP      |
-
 ## License
 
 [MIT](LICENSE)
