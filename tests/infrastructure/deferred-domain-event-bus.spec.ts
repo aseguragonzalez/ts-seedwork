@@ -2,17 +2,17 @@ import { BaseDomainEvent, DeferredDomainEventBus, DomainEventHandler } from '@sr
 
 class OrderPlaced extends BaseDomainEvent<{ orderId: string }> {
   constructor(orderId: string) {
-    super({ orderId });
+    super(orderId, { orderId });
   }
 }
 
 class PaymentReceived extends BaseDomainEvent<{ amount: number }> {
-  constructor(amount: number) {
-    super({ amount });
+  constructor(aggregateId: string, amount: number) {
+    super(aggregateId, { amount });
   }
 }
 
-const makeHandler = <T extends { id: string; occurredAt: Date }>() => {
+const makeHandler = <T extends { id: string; aggregateId: string; occurredAt: Date }>() => {
   const received: T[] = [];
   const handler: DomainEventHandler<T> = {
     handle: jest.fn(async (event: T) => {
@@ -88,7 +88,7 @@ describe('DeferredDomainEventBus', () => {
     bus.subscribe(OrderPlaced, orderHandler);
     bus.subscribe(PaymentReceived, paymentHandler);
 
-    await bus.publish([new OrderPlaced('order-1'), new PaymentReceived(100)]);
+    await bus.publish([new OrderPlaced('order-1'), new PaymentReceived('agg-1', 100)]);
     await bus.dispatch();
 
     expect(orderReceived).toHaveLength(1);

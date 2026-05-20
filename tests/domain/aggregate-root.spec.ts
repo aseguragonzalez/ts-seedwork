@@ -2,8 +2,8 @@ import { AggregateRoot } from '@src/domain/aggregate-root';
 import { BaseDomainEvent, TypedDomainEvent } from '@src/domain/domain-event';
 
 class TestEvent extends BaseDomainEvent<{ value: string }> {
-  constructor(value: string) {
-    super({ value });
+  constructor(aggregateId: string, value: string) {
+    super(aggregateId, { value });
   }
 }
 
@@ -13,7 +13,7 @@ class TestAggregate extends AggregateRoot<string> {
   }
 
   trigger(value: string): TestAggregate {
-    return new TestAggregate(this.id, [...this.getDomainEvents(), new TestEvent(value)]);
+    return new TestAggregate(this.id, [...this.getDomainEvents(), new TestEvent(this.id, value)]);
   }
 }
 
@@ -31,7 +31,7 @@ describe('AggregateRoot', () => {
 
   it('getDomainEvents returns a copy — external mutations do not affect internal state', () => {
     const agg = new TestAggregate('id-1').trigger('foo');
-    (agg.getDomainEvents() as TypedDomainEvent<Record<string, unknown>>[]).push(new TestEvent('injected'));
+    (agg.getDomainEvents() as TypedDomainEvent<Record<string, unknown>>[]).push(new TestEvent('id-1', 'injected'));
     expect(agg.getDomainEvents()).toHaveLength(1);
   });
 
