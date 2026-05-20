@@ -55,7 +55,7 @@ describe('DepositMoneyHandler', () => {
   it('returns Fail when account does not exist', async () => {
     const result = await bus.dispatch(new DepositMoneyCommand('unknown', 50, 'EUR'));
 
-    expect(result.isFail()).toBe(true);
+    expect(result.isFailed()).toBe(true);
     expect(result.errors[0].code).toBe('NOT_FOUND');
   });
 

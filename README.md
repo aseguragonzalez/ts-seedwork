@@ -97,7 +97,6 @@ Comprehensive guides are available in the [`docs/`](docs/) directory:
 
 - [Getting Started](docs/getting-started.md)
 - [Component Reference](docs/component-reference.md)
-- [Best Practices](docs/best-practices.md)
 - [Coding Standards](docs/coding-standards.md)
 - [Changelog](CHANGELOG.md)
 

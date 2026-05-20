@@ -1,18 +1,19 @@
 import { BaseDomainEvent, DeferredDomainEventBus, DomainEventHandler } from '@src';
+import { DeferredDomainEventBusSpy } from '@src/testing/deferred-domain-event-bus-spy';
 
 class OrderPlaced extends BaseDomainEvent<{ orderId: string }> {
   constructor(orderId: string) {
-    super({ orderId });
+    super(orderId, { orderId });
   }
 }
 
 class PaymentReceived extends BaseDomainEvent<{ amount: number }> {
-  constructor(amount: number) {
-    super({ amount });
+  constructor(aggregateId: string, amount: number) {
+    super(aggregateId, { amount });
   }
 }
 
-const makeHandler = <T extends { id: string; occurredAt: Date }>() => {
+const makeHandler = <T extends { id: string; aggregateId: string; occurredAt: Date }>() => {
   const received: T[] = [];
   const handler: DomainEventHandler<T> = {
     handle: jest.fn(async (event: T) => {
@@ -88,7 +89,7 @@ describe('DeferredDomainEventBus', () => {
     bus.subscribe(OrderPlaced, orderHandler);
     bus.subscribe(PaymentReceived, paymentHandler);
 
-    await bus.publish([new OrderPlaced('order-1'), new PaymentReceived(100)]);
+    await bus.publish([new OrderPlaced('order-1'), new PaymentReceived('agg-1', 100)]);
     await bus.dispatch();
 
     expect(orderReceived).toHaveLength(1);
@@ -106,5 +107,57 @@ describe('DeferredDomainEventBus', () => {
     await bus.dispatch();
 
     expect(handler.handle).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('DeferredDomainEventBusSpy', () => {
+  it('pending returns buffered events before dispatch', async () => {
+    const bus = new DeferredDomainEventBusSpy();
+    const event1 = new OrderPlaced('order-1');
+    const event2 = new OrderPlaced('order-2');
+    await bus.publish([event1, event2]);
+
+    expect(bus.pending).toHaveLength(2);
+    expect(bus.pending).toContain(event1);
+    expect(bus.pending).toContain(event2);
+  });
+
+  it('pending is empty after dispatch', async () => {
+    const bus = new DeferredDomainEventBusSpy();
+    await bus.publish([new OrderPlaced('order-1')]);
+    await bus.dispatch();
+
+    expect(bus.pending).toHaveLength(0);
+  });
+
+  it('pending is empty after discard', async () => {
+    const bus = new DeferredDomainEventBusSpy();
+    await bus.publish([new OrderPlaced('order-1')]);
+    bus.discard();
+
+    expect(bus.pending).toHaveLength(0);
+  });
+
+  it('reset clears pending events without dispatching', async () => {
+    const bus = new DeferredDomainEventBusSpy();
+    const { handler } = makeHandler<OrderPlaced>();
+    bus.subscribe(OrderPlaced, handler);
+    await bus.publish([new OrderPlaced('order-1')]);
+    bus.reset();
+
+    expect(bus.pending).toHaveLength(0);
+    expect(handler.handle).not.toHaveBeenCalled();
+  });
+
+  it('reset clears subscribed handlers', async () => {
+    const bus = new DeferredDomainEventBusSpy();
+    const { handler } = makeHandler<OrderPlaced>();
+    bus.subscribe(OrderPlaced, handler);
+    bus.reset();
+
+    await bus.publish([new OrderPlaced('order-1')]);
+    await bus.dispatch();
+
+    expect(handler.handle).not.toHaveBeenCalled();
   });
 });

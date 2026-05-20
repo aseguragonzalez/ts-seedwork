@@ -74,7 +74,7 @@ describe('CommandBusBuilder', () => {
 
       const result = await bus.dispatch(new DoSomething());
 
-      expect(result.isFail()).toBe(true);
+      expect(result.isFailed()).toBe(true);
       expect(result.errors[0].code).toBe('RULE_VIOLATED');
     });
 
@@ -124,13 +124,13 @@ describe('CommandBusBuilder', () => {
       expect(uow.rollback).not.toHaveBeenCalled();
     });
 
-    it('opens session and commits on DomainError (converted to Result.fail)', async () => {
+    it('opens session and commits on DomainError (converted to Result.failed)', async () => {
       const uow = makeUow();
       const bus = new CommandBusBuilder().register(DoSomething, new DomainErrorHandler()).withTransaction(uow).build();
 
       const result = await bus.dispatch(new DoSomething());
 
-      expect(result.isFail()).toBe(true);
+      expect(result.isFailed()).toBe(true);
       expect(uow.createSession).toHaveBeenCalledTimes(1);
       expect(uow.commit).toHaveBeenCalledTimes(1);
       expect(uow.rollback).not.toHaveBeenCalled();
@@ -269,7 +269,7 @@ describe('CommandBusBuilder', () => {
 
       const result = await bus.dispatch(new DoSomething());
 
-      expect(result.isFail()).toBe(true);
+      expect(result.isFailed()).toBe(true);
       expect(eventBus.discard).toHaveBeenCalledTimes(1);
       expect(eventBus.dispatch).not.toHaveBeenCalled();
     });

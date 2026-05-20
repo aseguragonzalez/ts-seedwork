@@ -119,7 +119,7 @@ Commands return `Result` — domain errors are caught and converted automaticall
 
 ```typescript
 const result = await bus.dispatch(new OpenAccountCommand('acc-1', 1000));
-if (result.isFail()) {
+if (result.isFailed()) {
   console.error(result.errors);
 }
 ```
@@ -128,5 +128,4 @@ if (result.isFail()) {
 
 - [`examples/bank-account/`](examples/bank-account/) — complete bounded context exercising every building block end to end.
 - [Component Reference](component-reference.md) — every class, interface, and infrastructure component with full API details.
-- [Best Practices](best-practices.md) — design guidelines and patterns for effective use.
 - [Coding Standards](coding-standards.md) — conventions aligned with DDD and Clean Architecture.

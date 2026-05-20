@@ -1,5 +1,5 @@
 import { AggregateRoot } from '@src';
-import { InMemoryRepository } from '@src/infrastructure/in-memory-repository';
+import { InMemoryRepository } from '@src/testing/in-memory-repository';
 
 class UserId {
   constructor(public readonly value: string) {
@@ -64,5 +64,31 @@ describe('InMemoryRepository', () => {
   it('deleteById on non-existent id is a no-op', async () => {
     const repo = new UserRepository();
     await expect(repo.deleteById(new UserId('non-existent'))).resolves.toBeUndefined();
+  });
+
+  it('all returns all saved aggregates', async () => {
+    const repo = new UserRepository();
+    const alice = new User(new UserId('user-1'), 'Alice');
+    const bob = new User(new UserId('user-2'), 'Bob');
+    await repo.save(alice);
+    await repo.save(bob);
+
+    expect(repo.all).toHaveLength(2);
+    expect(repo.all).toContain(alice);
+    expect(repo.all).toContain(bob);
+  });
+
+  it('all returns an empty array when the store is empty', async () => {
+    const repo = new UserRepository();
+    expect(repo.all).toEqual([]);
+  });
+
+  it('reset clears all saved aggregates', async () => {
+    const repo = new UserRepository();
+    await repo.save(new User(new UserId('user-1'), 'Alice'));
+    repo.reset();
+
+    expect(repo.all).toEqual([]);
+    expect(await repo.findById(new UserId('user-1'))).toBeNull();
   });
 });

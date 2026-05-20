@@ -5,7 +5,6 @@ This package provides DDD and hexagonal architecture building blocks for TypeScr
 ## Contents
 
 - [Component reference](component-reference.md) — Every interface, base class, and infrastructure component.
-- [Best practices](best-practices.md) — How to use the package effectively in your project.
 - [Coding standards](coding-standards.md) — Conventions aligned with DDD and Clean Architecture, with do/don't guidelines.
 
 ## Complete working example

@@ -1,6 +1,6 @@
 import type { BackgroundTask, TaskHandler } from '@src';
 import { BaseBackgroundTask } from '@src';
-import { InMemoryTaskScheduler } from '@src/infrastructure/in-memory-task-scheduler';
+import { InMemoryTaskScheduler } from '@src/testing/in-memory-task-scheduler';
 
 class SendEmailTask extends BaseBackgroundTask {
   constructor(correlationId: string, id?: string) {

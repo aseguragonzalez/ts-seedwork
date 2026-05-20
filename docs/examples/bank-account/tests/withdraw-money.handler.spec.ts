@@ -58,14 +58,14 @@ describe('WithdrawMoneyHandler', () => {
   it('returns Fail when account does not exist', async () => {
     const result = await bus.dispatch(new WithdrawMoneyCommand('unknown', 50, 'EUR'));
 
-    expect(result.isFail()).toBe(true);
+    expect(result.isFailed()).toBe(true);
     expect(result.errors[0].code).toBe('NOT_FOUND');
   });
 
   it('returns Fail on insufficient funds', async () => {
     const result = await bus.dispatch(new WithdrawMoneyCommand('acc-1', 500, 'EUR'));
 
-    expect(result.isFail()).toBe(true);
+    expect(result.isFailed()).toBe(true);
     expect(result.errors[0].code).toBe('INSUFFICIENT_FUNDS');
   });
 

@@ -27,7 +27,7 @@ describe('DomainEventCoordinatorCommandBus', () => {
   });
 
   it('calls discard (not dispatch) when inner bus returns fail result', async () => {
-    const inner = makeInner(() => Promise.resolve(Result.fail([{ code: 'ERR', description: 'domain error' }])));
+    const inner = makeInner(() => Promise.resolve(Result.failed([{ code: 'ERR', description: 'domain error' }])));
     const eventBus = new DeferredDomainEventBus();
     jest.spyOn(eventBus, 'dispatch');
     jest.spyOn(eventBus, 'discard');
@@ -35,7 +35,7 @@ describe('DomainEventCoordinatorCommandBus', () => {
 
     const result = await bus.dispatch(new DoSomething());
 
-    expect(result.isFail()).toBe(true);
+    expect(result.isFailed()).toBe(true);
     expect(eventBus.discard).toHaveBeenCalledTimes(1);
     expect(eventBus.dispatch).not.toHaveBeenCalled();
   });

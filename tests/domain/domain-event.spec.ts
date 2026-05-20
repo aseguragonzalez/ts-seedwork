@@ -3,15 +3,16 @@ import { BaseDomainEvent } from '@src/domain/domain-event';
 type TestPayload = { key: string };
 
 class TestDomainEvent extends BaseDomainEvent<TestPayload> {
-  constructor() {
-    super({ key: 'value' });
+  constructor(aggregateId = 'agg-1') {
+    super(aggregateId, { key: 'value' });
   }
 }
 
 describe('BaseDomainEvent (seedwork package)', () => {
   it('should hold all event properties', () => {
-    const event = new TestDomainEvent();
+    const event = new TestDomainEvent('agg-1');
     expect(event.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(event.aggregateId).toBe('agg-1');
     expect(event.payload).toEqual({ key: 'value' });
     expect(event.occurredAt).toBeInstanceOf(Date);
   });

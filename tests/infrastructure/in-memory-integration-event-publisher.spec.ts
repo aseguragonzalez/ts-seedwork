@@ -1,5 +1,5 @@
 import { BaseIntegrationEvent } from '@src';
-import { InMemoryIntegrationEventPublisher } from '@src/infrastructure/in-memory-integration-event-publisher';
+import { InMemoryIntegrationEventPublisher } from '@src/testing/in-memory-integration-event-publisher';
 
 class OrderCreatedEvent extends BaseIntegrationEvent {
   constructor(aggregateId: string) {

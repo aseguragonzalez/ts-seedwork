@@ -2,8 +2,8 @@ import type { DomainEventBus, DomainEventHandler } from '../application/domain-e
 import type { DomainEvent } from '../domain/domain-event.js';
 
 export class DeferredDomainEventBus implements DomainEventBus {
-  private readonly handlers = new Map<Function, DomainEventHandler<any>[]>();
-  private readonly pending = new Map<string, DomainEvent>();
+  protected readonly handlers = new Map<Function, DomainEventHandler<any>[]>();
+  protected readonly buffer = new Map<string, DomainEvent>();
 
   subscribe<TEvent extends DomainEvent>(
     eventType: Function & { prototype: TEvent },
@@ -15,15 +15,15 @@ export class DeferredDomainEventBus implements DomainEventBus {
 
   async publish(events: ReadonlyArray<DomainEvent>): Promise<void> {
     for (const event of events) {
-      if (!this.pending.has(event.id)) {
-        this.pending.set(event.id, event);
+      if (!this.buffer.has(event.id)) {
+        this.buffer.set(event.id, event);
       }
     }
   }
 
   async dispatch(): Promise<void> {
-    const events = [...this.pending.values()];
-    this.pending.clear();
+    const events = [...this.buffer.values()];
+    this.buffer.clear();
     for (const event of events) {
       const handlers = this.handlers.get(event.constructor) ?? [];
       for (const handler of handlers) {
@@ -33,6 +33,6 @@ export class DeferredDomainEventBus implements DomainEventBus {
   }
 
   discard(): void {
-    this.pending.clear();
+    this.buffer.clear();
   }
 }

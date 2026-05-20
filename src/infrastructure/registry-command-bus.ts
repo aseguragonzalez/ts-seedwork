@@ -24,7 +24,7 @@ export class RegistryCommandBus implements CommandBus {
       return Result.ok();
     } catch (error) {
       if (error instanceof DomainError) {
-        return Result.fail([{ code: error.code, description: error.message }]);
+        return Result.failed([{ code: error.code, description: error.message }]);
       }
       throw error;
     }

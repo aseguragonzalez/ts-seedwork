@@ -1,6 +1,6 @@
 import type { BackgroundTask } from '@src';
 import { BaseBackgroundTask } from '@src';
-import { InMemoryTaskOutboxRepository } from '@src/infrastructure/outbox';
+import { InMemoryTaskOutboxRepository } from '@src/testing/in-memory-outbox-repositories';
 
 class SendEmailTask extends BaseBackgroundTask {
   constructor(correlationId: string) {

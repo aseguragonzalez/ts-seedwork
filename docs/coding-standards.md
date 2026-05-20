@@ -92,6 +92,39 @@ These standards apply to projects built on top of this package.
 - Design for idempotency when the bus may redeliver events.
 - Wiring (routing event types to handlers) is the responsibility of the consuming project's composition root — it is not prescribed by this package.
 
+### Correlation and causation IDs in integration events
+
+`correlationId` identifies the original request that triggered a chain of operations. It must be propagated from the entry point (HTTP handler, message consumer) down through the entire call stack. `causationId` identifies the immediate cause of the integration event — the domain event ID that triggered it.
+
+**Do not pass `event.id` as `correlationId`.** That conflates cause with trace context.
+
+Propagate `correlationId` using `AsyncLocalStorage` from `node:async_hooks`. Set it at the boundary (HTTP middleware, message consumer) and read it inside integration event factories:
+
+```typescript
+// shared/correlation-context.ts
+import { AsyncLocalStorage } from 'node:async_hooks';
+export const correlationContext = new AsyncLocalStorage<string>();
+
+// HTTP middleware
+app.use((req, _res, next) => {
+  const id = req.headers['x-correlation-id'] ?? crypto.randomUUID();
+  correlationContext.run(String(id), next);
+});
+
+// Integration event factory
+static create(event: AccountOpened): AccountOpenedIntegrationEvent {
+  const correlationId = correlationContext.getStore() ?? crypto.randomUUID();
+  return new AccountOpenedIntegrationEvent(
+    event.aggregateId,
+    { /* payload */ },
+    correlationId,  // from request context
+    event.id        // causationId — the domain event that triggered this
+  );
+}
+```
+
+The seedwork does not provide `correlationContext` — it is the responsibility of each project.
+
 ---
 
 ## Infrastructure layer
