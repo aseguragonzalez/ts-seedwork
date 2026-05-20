@@ -52,7 +52,8 @@ export { DomainError } from './domain/domain-error.js';
 
 // Infrastructure — Command Bus
 export { CommandBusBuilder } from './infrastructure/command-bus-builder.js';
-export { DeferredDomainEventBus } from './infrastructure/deferred-domain-event-bus.js';
+export type { DomainEventBusSpy } from './infrastructure/deferred-domain-event-bus.js';
+export { DeferredDomainEventBus, DeferredDomainEventBusSpy } from './infrastructure/deferred-domain-event-bus.js';
 export { DomainEventCoordinatorCommandBus } from './infrastructure/domain-event-coordinator-command-bus.js';
 export { RegistryCommandBus } from './infrastructure/registry-command-bus.js';
 export { TransactionalCommandBus } from './infrastructure/transactional-command-bus.js';
