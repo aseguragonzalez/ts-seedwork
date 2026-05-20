@@ -1,4 +1,5 @@
-import { BaseDomainEvent, DeferredDomainEventBus, DeferredDomainEventBusSpy, DomainEventHandler } from '@src';
+import { BaseDomainEvent, DeferredDomainEventBus, DomainEventHandler } from '@src';
+import { DeferredDomainEventBusSpy } from '@src/testing/deferred-domain-event-bus-spy';
 
 class OrderPlaced extends BaseDomainEvent<{ orderId: string }> {
   constructor(orderId: string) {

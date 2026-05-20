@@ -34,11 +34,6 @@ export interface IntegrationEventPublisher {
   publish(events: ReadonlyArray<IntegrationEvent>): Promise<void>;
 }
 
-export interface IntegrationEventPublisherSpy extends IntegrationEventPublisher {
-  readonly published: ReadonlyArray<IntegrationEvent>;
-  reset(): void;
-}
-
 export interface IntegrationEventHandler<TEvent extends IntegrationEvent = IntegrationEvent> {
   handle(event: TEvent): Promise<void>;
 }

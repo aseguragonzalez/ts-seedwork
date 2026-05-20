@@ -2,10 +2,9 @@ import {
   CommandBusBuilder,
   DeferredDomainEventBus,
   DomainEventPublishingRepository,
-  InMemoryIntegrationEventPublisher,
-  InMemoryTaskScheduler,
   QueryBusBuilder,
 } from '@aseguragonzalez/ts-seedwork';
+import { InMemoryIntegrationEventPublisher, InMemoryTaskScheduler } from '@aseguragonzalez/ts-seedwork/testing';
 
 import { AccountOpened } from '../domain/events/account-opened.js';
 import { InMemoryBankAccountRepository } from '../infrastructure/in-memory-bank-account.repository.js';

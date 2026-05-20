@@ -1,11 +1,6 @@
 import type { DomainEventBus, DomainEventHandler } from '../application/domain-event-bus.js';
 import type { DomainEvent } from '../domain/domain-event.js';
 
-export interface DomainEventBusSpy extends DomainEventBus {
-  readonly pending: ReadonlyArray<DomainEvent>;
-  reset(): void;
-}
-
 export class DeferredDomainEventBus implements DomainEventBus {
   protected readonly handlers = new Map<Function, DomainEventHandler<any>[]>();
   protected readonly buffer = new Map<string, DomainEvent>();
@@ -39,16 +34,5 @@ export class DeferredDomainEventBus implements DomainEventBus {
 
   discard(): void {
     this.buffer.clear();
-  }
-}
-
-export class DeferredDomainEventBusSpy extends DeferredDomainEventBus implements DomainEventBusSpy {
-  get pending(): ReadonlyArray<DomainEvent> {
-    return [...this.buffer.values()];
-  }
-
-  reset(): void {
-    this.buffer.clear();
-    this.handlers.clear();
   }
 }

@@ -9,6 +9,7 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@src/(.*)$': '<rootDir>/src/$1',
     '^@src$': '<rootDir>/src/index',
+    '^@aseguragonzalez/ts-seedwork/testing$': '<rootDir>/src/testing/index',
     '^@aseguragonzalez/ts-seedwork$': '<rootDir>/src/index',
   },
   roots: ['<rootDir>/tests', '<rootDir>/docs/examples'],

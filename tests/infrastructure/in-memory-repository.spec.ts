@@ -1,5 +1,5 @@
 import { AggregateRoot } from '@src';
-import { InMemoryRepository } from '@src/infrastructure/in-memory-repository';
+import { InMemoryRepository } from '@src/testing/in-memory-repository';
 
 class UserId {
   constructor(public readonly value: string) {

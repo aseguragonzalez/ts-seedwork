@@ -1,6 +1,6 @@
 import type { IntegrationEvent } from '@src';
 import { BaseIntegrationEvent } from '@src';
-import { InMemoryIntegrationEventOutboxRepository } from '@src/infrastructure/outbox';
+import { InMemoryIntegrationEventOutboxRepository } from '@src/testing/in-memory-outbox-repositories';
 
 class OrderCreatedEvent extends BaseIntegrationEvent {
   constructor(aggregateId: string, correlationId: string) {

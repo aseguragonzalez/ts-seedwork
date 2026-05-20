@@ -1,4 +1,9 @@
-import type { IntegrationEvent, IntegrationEventPublisherSpy } from '../application/integration-event.js';
+import type { IntegrationEvent, IntegrationEventPublisher } from '../application/integration-event.js';
+
+export interface IntegrationEventPublisherSpy extends IntegrationEventPublisher {
+  readonly published: ReadonlyArray<IntegrationEvent>;
+  reset(): void;
+}
 
 export class InMemoryIntegrationEventPublisher implements IntegrationEventPublisherSpy {
   private readonly events: IntegrationEvent[] = [];
