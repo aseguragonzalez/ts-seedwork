@@ -25,7 +25,7 @@ export class Result {
     return this.ok;
   }
 
-  isFail(): boolean {
+  isFailed(): boolean {
     return !this.ok;
   }
 }

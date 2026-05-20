@@ -5,7 +5,7 @@ describe('Result.ok()', () => {
     const result = Result.ok();
     expect(result).toBeInstanceOf(Result);
     expect(result.isOk()).toBe(true);
-    expect(result.isFail()).toBe(false);
+    expect(result.isFailed()).toBe(false);
     expect(result.errors).toHaveLength(0);
   });
 
@@ -22,7 +22,7 @@ describe('Result.failed()', () => {
     const result = Result.failed([{ code: 'NOT_FOUND', description: 'Resource not found' }]);
     expect(result).toBeInstanceOf(Result);
     expect(result.isOk()).toBe(false);
-    expect(result.isFail()).toBe(true);
+    expect(result.isFailed()).toBe(true);
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0].code).toBe('NOT_FOUND');
     expect(result.errors[0].description).toBe('Resource not found');

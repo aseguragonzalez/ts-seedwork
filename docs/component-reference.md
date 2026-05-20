@@ -171,12 +171,12 @@ class InsufficientFundsError extends DomainError {
 - **`Result`** — value class returned by `CommandBus.dispatch()`. Encapsulates success or expected failure.
 - **`ResultError`** — shape of each failure entry: `{ code: string; description: string }`.
 - **Factories:** `Result.ok()` for success; `Result.failed(errors)` for expected domain failures.
-- **Guards:** `.isOk()` returns `true` on success; `.isFail()` returns `true` on failure. `.errors` holds the failure list (empty array on success).
+- **Guards:** `.isOk()` returns `true` on success; `.isFailed()` returns `true` on failure. `.errors` holds the failure list (empty array on success).
 - **Convention:** use `Result` for expected domain failures at the application boundary. Infrastructure failures (timeouts, connection drops) should still propagate as exceptions.
 
 ```typescript
 const result = await bus.dispatch(command);
-if (result.isFail()) {
+if (result.isFailed()) {
   return res.status(422).json({ errors: result.errors });
 }
 res.status(204).send();

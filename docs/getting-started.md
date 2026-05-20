@@ -119,7 +119,7 @@ Commands return `Result` — domain errors are caught and converted automaticall
 
 ```typescript
 const result = await bus.dispatch(new OpenAccountCommand('acc-1', 1000));
-if (result.isFail()) {
+if (result.isFailed()) {
   console.error(result.errors);
 }
 ```

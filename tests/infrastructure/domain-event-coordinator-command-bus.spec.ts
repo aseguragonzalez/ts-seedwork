@@ -35,7 +35,7 @@ describe('DomainEventCoordinatorCommandBus', () => {
 
     const result = await bus.dispatch(new DoSomething());
 
-    expect(result.isFail()).toBe(true);
+    expect(result.isFailed()).toBe(true);
     expect(eventBus.discard).toHaveBeenCalledTimes(1);
     expect(eventBus.dispatch).not.toHaveBeenCalled();
   });

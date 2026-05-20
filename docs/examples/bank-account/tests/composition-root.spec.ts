@@ -30,7 +30,7 @@ describe('Composition root — OpenAccountCommand end-to-end', () => {
     // Deposit on a non-existent account — handler throws AccountNotFoundError → Result.failed
     const result = await commandBus.dispatch(new DepositMoneyCommand('unknown', 50, 'EUR'));
 
-    expect(result.isFail()).toBe(true);
+    expect(result.isFailed()).toBe(true);
     expect(integrationEventPublisher.published).toHaveLength(0);
   });
 });

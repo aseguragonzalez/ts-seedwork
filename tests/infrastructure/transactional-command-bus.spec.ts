@@ -37,7 +37,7 @@ describe('TransactionalCommandBus (seedwork package)', () => {
 
     const result = await bus.dispatch(new DoSomething());
 
-    expect(result.isFail()).toBe(true);
+    expect(result.isFailed()).toBe(true);
     expect(uow.commit).toHaveBeenCalledTimes(1);
     expect(uow.rollback).not.toHaveBeenCalled();
   });
