@@ -125,7 +125,7 @@ Concrete bus implementations and decorators. May import from domain and applicat
 | --------------------------------------------------------- | -------------------------------------------------- |
 | Return a new aggregate instance from behavior methods     | Mutate aggregate state in place                    |
 | Keep domain and application layers free of infrastructure | Import a framework or DB driver from `src/domain/` |
-| Use `Result.failed()` for expected domain failures        | Throw `DomainError` inside a handler               |
+| Throw a named `DomainError` subclass from handlers        | Return `Result.failed()` directly from a handler   |
 | Define one command and one handler per use case           | Put multiple use cases in one handler              |
 | Keep event payloads serializable (primitives only)        | Store domain objects in event payloads             |
 
