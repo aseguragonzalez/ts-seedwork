@@ -65,6 +65,7 @@ export { ValidationQueryBus } from './infrastructure/validation-query-bus.js';
 
 // Infrastructure — Repository
 export { DomainEventPublishingRepository } from './infrastructure/domain-event-publishing-repository.js';
+export type { RepositorySpy } from './infrastructure/in-memory-repository.js';
 export { InMemoryRepository } from './infrastructure/in-memory-repository.js';
 
 // Infrastructure — Integration Events
