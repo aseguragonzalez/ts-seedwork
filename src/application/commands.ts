@@ -17,7 +17,7 @@ export class Result {
     return new Result(true, []);
   }
 
-  static fail(errors: ResultError[]): Result {
+  static failed(errors: ResultError[]): Result {
     return new Result(false, errors);
   }
 

@@ -27,7 +27,7 @@ Three layers with a strict inward dependency rule: infrastructure → applicatio
 | ------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `Command` / `CommandHandler` / `CommandBus` | Write side. `dispatch` returns `Result`.                                            |
 | `Query` / `QueryHandler` / `QueryBus`       | Read side. `ask` returns `Maybe<T>`.                                                |
-| `Result`                                    | Command outcome. `Result.ok()` / `Result.fail(errors)`.                             |
+| `Result`                                    | Command outcome. `Result.ok()` / `Result.failed(errors)`.                           |
 | `Maybe<T>`                                  | Query outcome. `Maybe.just(value)` / `Maybe.nothing()`.                             |
 | `DomainEventPublisher`                      | Outbound port. Do not inject into handlers — use `DomainEventPublishingRepository`. |
 | `DomainEventHandler<TEvent>`                | Inbound port. One class per event type.                                             |
@@ -69,7 +69,7 @@ static reconstitute(id: BankAccountId, balance: Money): BankAccount {
 
 **Handler pattern:** load aggregate → call behavior method → `save(updated)`. Event publishing is transparent via `DomainEventPublishingRepository` — handlers have no knowledge of the event bus.
 
-**`DomainError` maps to `Result.fail`.** Expected domain failures (business rule violations) are modeled as `DomainError` subclasses and surface as `Result.fail` at the command bus boundary. Unexpected exceptions (infrastructure, timeouts) propagate as thrown errors.
+**`DomainError` maps to `Result.failed`.** Expected domain failures (business rule violations) are modeled as `DomainError` subclasses and surface as `Result.failed` at the command bus boundary. Unexpected exceptions (infrastructure, timeouts) propagate as thrown errors.
 
 **Bus stack order.** With `CommandBusBuilder`, first declared = outermost. For correct behaviour, declare `.withValidation()` before `.withTransaction()` so validation errors never open a transaction:
 

@@ -170,7 +170,7 @@ class InsufficientFundsError extends DomainError {
 
 - **`Result`** — value class returned by `CommandBus.dispatch()`. Encapsulates success or expected failure.
 - **`ResultError`** — shape of each failure entry: `{ code: string; description: string }`.
-- **Factories:** `Result.ok()` for success; `Result.fail(errors)` for expected domain failures.
+- **Factories:** `Result.ok()` for success; `Result.failed(errors)` for expected domain failures.
 - **Guards:** `.isOk()` returns `true` on success; `.isFail()` returns `true` on failure. `.errors` holds the failure list (empty array on success).
 - **Convention:** use `Result` for expected domain failures at the application boundary. Infrastructure failures (timeouts, connection drops) should still propagate as exceptions.
 
@@ -318,4 +318,4 @@ With this stack, each dispatch:
 
 1. Validates the command (`withValidation`) — throws `ValidationErrors` before a transaction is opened
 2. Opens a transaction (`withTransaction`) — commits on success, rolls back and rethrows on unexpected exception
-3. Executes the handler (`registry`) — `DomainError` maps to `Result.fail`; other exceptions propagate
+3. Executes the handler (`registry`) — `DomainError` maps to `Result.failed`; other exceptions propagate

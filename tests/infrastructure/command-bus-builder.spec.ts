@@ -124,7 +124,7 @@ describe('CommandBusBuilder', () => {
       expect(uow.rollback).not.toHaveBeenCalled();
     });
 
-    it('opens session and commits on DomainError (converted to Result.fail)', async () => {
+    it('opens session and commits on DomainError (converted to Result.failed)', async () => {
       const uow = makeUow();
       const bus = new CommandBusBuilder().register(DoSomething, new DomainErrorHandler()).withTransaction(uow).build();
 

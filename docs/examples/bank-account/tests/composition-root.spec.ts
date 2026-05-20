@@ -27,7 +27,7 @@ describe('Composition root — OpenAccountCommand end-to-end', () => {
   it('does not publish integration events when the command returns a domain failure', async () => {
     const { commandBus, integrationEventPublisher } = buildCommandBus();
 
-    // Deposit on a non-existent account — handler throws AccountNotFoundError → Result.fail
+    // Deposit on a non-existent account — handler throws AccountNotFoundError → Result.failed
     const result = await commandBus.dispatch(new DepositMoneyCommand('unknown', 50, 'EUR'));
 
     expect(result.isFail()).toBe(true);
