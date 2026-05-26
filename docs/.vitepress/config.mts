@@ -1,4 +1,4 @@
-import { withMermaid } from 'vitepress-plugin-mermaid'
+import { withMermaid } from 'vitepress-plugin-mermaid';
 
 export default withMermaid({
   title: 'ts-seedwork',
@@ -47,4 +47,4 @@ export default withMermaid({
       message: 'Released under the MIT License.',
     },
   },
-})
+});

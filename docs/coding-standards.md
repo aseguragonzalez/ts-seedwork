@@ -11,16 +11,16 @@
 
 ## Do / Don't Overview
 
-| Concern | Do | Don't |
-|---|---|---|
-| Domain errors | Throw `DomainError` subclasses | Throw `Error` directly |
-| Validation | `validate()` in `Command`/`Query`; `ValidationCommandBus` | Validate in handler |
-| Bus stack | `Validation → Transactional → DomainEventCoordinator → Registry` | Skip layers |
-| Domain events | Pass events array to `AggregateRoot` constructor; `DomainEventPublishingRepository` publishes via `DomainEventBusPublisher` | Call handlers directly |
-| Integration events | Publish from `DomainEventHandler` via `IntegrationEventPublisher` | Publish from aggregate |
-| Tasks | Schedule from `DomainEventHandler` via `TaskScheduler` | Call task handlers directly |
-| Repository | Inject `DomainEventPublishingRepository` decorator | Publish events in use case |
-| Queries | Return `Maybe<T>` | Return `null` / `undefined` |
+| Concern            | Do                                                                                                                          | Don't                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Domain errors      | Throw `DomainError` subclasses                                                                                              | Throw `Error` directly      |
+| Validation         | `validate()` in `Command`/`Query`; `ValidationCommandBus`                                                                   | Validate in handler         |
+| Bus stack          | `Validation → Transactional → DomainEventCoordinator → Registry`                                                            | Skip layers                 |
+| Domain events      | Pass events array to `AggregateRoot` constructor; `DomainEventPublishingRepository` publishes via `DomainEventBusPublisher` | Call handlers directly      |
+| Integration events | Publish from `DomainEventHandler` via `IntegrationEventPublisher`                                                           | Publish from aggregate      |
+| Tasks              | Schedule from `DomainEventHandler` via `TaskScheduler`                                                                      | Call task handlers directly |
+| Repository         | Inject `DomainEventPublishingRepository` decorator                                                                          | Publish events in use case  |
+| Queries            | Return `Maybe<T>`                                                                                                           | Return `null` / `undefined` |
 
 ---
 
@@ -36,7 +36,7 @@
 class Account extends Entity<AccountId> {
   private constructor(
     id: AccountId,
-    private readonly email: Email,
+    private readonly email: Email
   ) {
     super(id);
   }
@@ -77,7 +77,7 @@ class BankAccount extends AggregateRoot<BankAccountId> {
     id: BankAccountId,
     private readonly owner: string,
     private readonly balance: Money,
-    events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = [],
+    events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = []
   ) {
     super(id, events);
   }
@@ -89,10 +89,7 @@ class BankAccount extends AggregateRoot<BankAccountId> {
 
   deposit(amount: Money): BankAccount {
     const event = MoneyDeposited.create(this.id.value, amount);
-    return new BankAccount(this.id, this.owner, this.balance.add(amount), [
-      ...this.getDomainEvents(),
-      event,
-    ]);
+    return new BankAccount(this.id, this.owner, this.balance.add(amount), [...this.getDomainEvents(), event]);
   }
 }
 ```
@@ -115,8 +112,8 @@ type AccountOpenedPayload = {
 class AccountOpened extends BaseDomainEvent<AccountOpenedPayload> {
   static create(accountId: string, owner: string, initialBalance: Money): AccountOpened {
     return new AccountOpened(
-      accountId,  // aggregateId — first arg, required on every domain event
-      { accountId, owner, amount: initialBalance.amount, currency: initialBalance.currency },
+      accountId, // aggregateId — first arg, required on every domain event
+      { accountId, owner, amount: initialBalance.amount, currency: initialBalance.currency }
     );
   }
 
@@ -163,7 +160,7 @@ class AccountAlreadyExistsException extends DomainError {
 class OpenAccountCommand implements Command {
   constructor(
     readonly accountId: string,
-    readonly email: string,
+    readonly email: string
   ) {}
 
   validate(): void {
@@ -190,7 +187,7 @@ class OpenAccountCommandHandler implements CommandHandler<OpenAccountCommand> {
     const account = BankAccount.open(
       new BankAccountId(command.accountId),
       command.owner,
-      new Money(command.amount, command.currency),
+      new Money(command.amount, command.currency)
     );
     await this.accounts.save(account);
   }
@@ -247,24 +244,19 @@ class AccountOpenedIntegrationEvent extends BaseIntegrationEvent {
         amount: event.payload.amount,
         currency: event.payload.currency,
       },
-      correlationStore.getStore() ?? randomUUID(),  // from execution context
-      event.id,                                      // causationId
+      correlationStore.getStore() ?? randomUUID(), // from execution context
+      event.id // causationId
     );
   }
 
-  private constructor(
-    aggregateId: string,
-    payload: AccountOpenedPayload,
-    correlationId: string,
-    causationId?: string,
-  ) {
+  private constructor(aggregateId: string, payload: AccountOpenedPayload, correlationId: string, causationId?: string) {
     super(
       AccountOpenedIntegrationEvent.TYPE,
       AccountOpenedIntegrationEvent.VERSION,
       aggregateId,
       payload,
       correlationId,
-      causationId,
+      causationId
     );
   }
 }
@@ -279,6 +271,7 @@ class AccountOpenedDomainEventHandler implements DomainEventHandler<AccountOpene
 ```
 
 **Key rules:**
+
 - `correlationId` comes from the execution context (`AsyncLocalStorage`) — set at the entry point
 - `causationId` is the domain event `id` — records what directly triggered this integration event
 - `publish()` takes an array — pass `[event]` even for a single event
@@ -300,15 +293,11 @@ class SendWelcomeEmailTask extends BaseBackgroundTask {
     return new SendWelcomeEmailTask(
       { accountId: event.aggregateId },
       correlationStore.getStore() ?? randomUUID(),
-      event.id,
+      event.id
     );
   }
 
-  private constructor(
-    payload: Record<string, unknown>,
-    correlationId: string,
-    causationId?: string,
-  ) {
+  private constructor(payload: Record<string, unknown>, correlationId: string, causationId?: string) {
     super(SendWelcomeEmailTask.TYPE, payload, correlationId, causationId);
   }
 }
@@ -322,7 +311,7 @@ class SendWelcomeEmailTaskHandler implements TaskHandler<SendWelcomeEmailTask> {
 class AccountOpenedDomainEventHandler implements DomainEventHandler<AccountOpened> {
   constructor(
     private readonly publisher: IntegrationEventPublisher,
-    private readonly scheduler: TaskScheduler,
+    private readonly scheduler: TaskScheduler
   ) {}
 
   async handle(event: AccountOpened): Promise<void> {
@@ -333,6 +322,7 @@ class AccountOpenedDomainEventHandler implements DomainEventHandler<AccountOpene
 ```
 
 **Key rules:**
+
 - `TYPE` static string is the discriminator — used by the task runner to route to the handler
 - Handlers must be idempotent; the outbox may deliver a task more than once
 - Do not schedule tasks from use-case handlers — use domain event handlers to decouple
@@ -351,7 +341,7 @@ class AccountOpenedDomainEventHandler implements DomainEventHandler<AccountOpene
 // wired in composition root:
 const repo = new DomainEventPublishingRepository(
   new PostgresAccountRepository(db),
-  domainEventBus,          // typed as DomainEventBusPublisher
+  domainEventBus // typed as DomainEventBusPublisher
 );
 ```
 
@@ -359,11 +349,11 @@ const repo = new DomainEventPublishingRepository(
 
 Three interfaces serve different roles:
 
-| Interface | Used by |
-|---|---|
-| `DomainEventBusPublisher` | `DomainEventPublishingRepository` decorator |
-| `DomainEventBusSubscriber` | Composition root — registers handlers |
-| `DomainEventBus` | `CommandBusBuilder.withDomainEventCoordination()` |
+| Interface                  | Used by                                           |
+| -------------------------- | ------------------------------------------------- |
+| `DomainEventBusPublisher`  | `DomainEventPublishingRepository` decorator       |
+| `DomainEventBusSubscriber` | Composition root — registers handlers             |
+| `DomainEventBus`           | `CommandBusBuilder.withDomainEventCoordination()` |
 
 `DeferredDomainEventBus` implements all three. Buffer is keyed by `event.id` — idempotent if the same aggregate is saved more than once in the same transaction.
 
@@ -375,16 +365,14 @@ const domainEventBus = new DeferredDomainEventBus();
 domainEventBus.subscribe(AccountOpened, new AccountOpenedDomainEventHandler(integrationPublisher, taskScheduler));
 
 // wrap domain repository (DomainEventBusPublisher)
-const accounts = new DomainEventPublishingRepository(
-  new PostgresAccountRepository(db),
-  domainEventBus,
-);
+const accounts = new DomainEventPublishingRepository(new PostgresAccountRepository(db), domainEventBus);
 
 // dispatch() drains the buffer and calls handlers; discard() clears without processing
 // both are called internally by DomainEventCoordinatorCommandBus
 ```
 
 **Key methods on `DeferredDomainEventBus`:**
+
 - `publish(events)` — buffers events keyed by `event.id` (idempotent)
 - `subscribe(EventClass, handler)` — registers a handler for a specific event type
 - `dispatch()` — drains the buffer and invokes matching handlers
@@ -405,13 +393,14 @@ Validation → Transactional → DomainEventCoordinator → Registry
 ```typescript
 const commandBus = new CommandBusBuilder()
   .register(OpenAccountCommand, new OpenAccountCommandHandler(accounts))
-  .withValidation()                              // outermost — validates before anything runs
-  .withTransaction(unitOfWork)                   // opens transaction before coordinator
-  .withDomainEventCoordination(domainEventBus)   // dispatches events after handler, inside transaction
+  .withValidation() // outermost — validates before anything runs
+  .withTransaction(unitOfWork) // opens transaction before coordinator
+  .withDomainEventCoordination(domainEventBus) // dispatches events after handler, inside transaction
   .build();
 ```
 
 **Flow per command:**
+
 1. `ValidationCommandBus` calls `command.validate()`
 2. `TransactionalCommandBus` opens a UoW transaction
 3. `DomainEventCoordinatorCommandBus` calls `dispatch()` after the handler returns, `discard()` on rollback
@@ -449,7 +438,7 @@ publisher.reset();
 const scheduler = new InMemoryTaskScheduler();
 scheduler.register(SendWelcomeEmailTask.TYPE, new SendWelcomeEmailTaskHandler());
 // ... run use case ...
-await scheduler.executeScheduled();   // executes all scheduled tasks in-process
+await scheduler.executeScheduled(); // executes all scheduled tasks in-process
 ```
 
 ---
@@ -471,21 +460,21 @@ if (result.isFailed()) {
 
 ## Naming Conventions
 
-| Artifact | Convention | Example |
-|---|---|---|
-| Entity | `PascalCase` | `Account` |
-| Value Object | `PascalCase` | `Email`, `AccountId` |
-| Aggregate | `PascalCase` | `Order` |
-| Domain Event | past tense `PascalCase` | `AccountOpened` |
-| Integration Event | past tense + `IntegrationEvent` suffix | `AccountOpenedIntegrationEvent` |
-| Background Task | noun + `Task` suffix | `SendWelcomeEmailTask` |
-| Command | imperative + `Command` | `OpenAccountCommand` |
-| Query | noun/adjective + `Query` | `FindAccountByEmailQuery` |
-| Handler | noun + `Handler` | `OpenAccountCommandHandler` |
-| Repository interface | noun + `Repository` | `AccountRepository` |
-| Repository impl | driver + noun + `Repository` | `PostgresAccountRepository` |
-| Domain error | descriptive + `Exception` (extends `DomainError`) | `AccountAlreadyExistsException` |
-| File | `kebab-case.ts` | `open-account-command-handler.ts` |
+| Artifact             | Convention                                        | Example                           |
+| -------------------- | ------------------------------------------------- | --------------------------------- |
+| Entity               | `PascalCase`                                      | `Account`                         |
+| Value Object         | `PascalCase`                                      | `Email`, `AccountId`              |
+| Aggregate            | `PascalCase`                                      | `Order`                           |
+| Domain Event         | past tense `PascalCase`                           | `AccountOpened`                   |
+| Integration Event    | past tense + `IntegrationEvent` suffix            | `AccountOpenedIntegrationEvent`   |
+| Background Task      | noun + `Task` suffix                              | `SendWelcomeEmailTask`            |
+| Command              | imperative + `Command`                            | `OpenAccountCommand`              |
+| Query                | noun/adjective + `Query`                          | `FindAccountByEmailQuery`         |
+| Handler              | noun + `Handler`                                  | `OpenAccountCommandHandler`       |
+| Repository interface | noun + `Repository`                               | `AccountRepository`               |
+| Repository impl      | driver + noun + `Repository`                      | `PostgresAccountRepository`       |
+| Domain error         | descriptive + `Exception` (extends `DomainError`) | `AccountAlreadyExistsException`   |
+| File                 | `kebab-case.ts`                                   | `open-account-command-handler.ts` |
 
 ---
 
@@ -523,6 +512,7 @@ src/
 ```
 
 **Rules:**
+
 - One concept per file; no god files
 - Barrel `index.ts` at each layer boundary — never import across layers by deep path
 - Infrastructure imports Application and Domain; Application imports Domain only; Domain imports nothing from this codebase
