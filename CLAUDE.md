@@ -127,8 +127,12 @@ class OpenAccountCommand extends Command {
   }
   protected validate(): void {
     const errors: ValidationErrorDetail[] = [];
-    if (!this.accountId) errors.push({ code: 'accountId', message: 'accountId is required' });
-    if (!this.email) errors.push({ code: 'email', message: 'email is required' });
+    if (!this.accountId) {
+      errors.push({ code: 'accountId', message: 'accountId is required' });
+    }
+    if (!this.email) {
+      errors.push({ code: 'email', message: 'email is required' });
+    }
     if (errors.length) {
       throw new ValidationErrors(errors);
     }

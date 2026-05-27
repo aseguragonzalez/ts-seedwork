@@ -11,16 +11,16 @@
 
 ## Do / Don't Overview
 
-| Concern            | Do                                                                                                                          | Don't                       |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| Domain errors      | Throw `DomainError` subclasses                                                                                              | Throw `Error` directly      |
-| Validation         | `protected validate()` in all four types; throw `DomainError` subclass in domain types, `ValidationErrors` in `Command`/`Query`; call `this.validate()` at end of constructor | Validate in handler |
-| Bus stack          | `Transactional → DomainEventCoordinator → Registry`                                                                         | Skip layers                 |
-| Domain events      | Pass events array to `AggregateRoot` constructor; `DomainEventPublishingRepository` publishes via `DomainEventBusPublisher` | Call handlers directly      |
-| Integration events | Publish from `DomainEventHandler` via `IntegrationEventPublisher`                                                           | Publish from aggregate      |
-| Tasks              | Schedule from `DomainEventHandler` via `TaskScheduler`                                                                      | Call task handlers directly |
-| Repository         | Inject `DomainEventPublishingRepository` decorator                                                                          | Publish events in use case  |
-| Queries            | Return `Maybe<T>`                                                                                                           | Return `null` / `undefined` |
+| Concern            | Do                                                                                                                                                                            | Don't                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Domain errors      | Throw `DomainError` subclasses                                                                                                                                                | Throw `Error` directly      |
+| Validation         | `protected validate()` in all four types; throw `DomainError` subclass in domain types, `ValidationErrors` in `Command`/`Query`; call `this.validate()` at end of constructor | Validate in handler         |
+| Bus stack          | `Transactional → DomainEventCoordinator → Registry`                                                                                                                           | Skip layers                 |
+| Domain events      | Pass events array to `AggregateRoot` constructor; `DomainEventPublishingRepository` publishes via `DomainEventBusPublisher`                                                   | Call handlers directly      |
+| Integration events | Publish from `DomainEventHandler` via `IntegrationEventPublisher`                                                                                                             | Publish from aggregate      |
+| Tasks              | Schedule from `DomainEventHandler` via `TaskScheduler`                                                                                                                        | Call task handlers directly |
+| Repository         | Inject `DomainEventPublishingRepository` decorator                                                                                                                            | Publish events in use case  |
+| Queries            | Return `Maybe<T>`                                                                                                                                                             | Return `null` / `undefined` |
 
 ---
 
@@ -179,8 +179,12 @@ class OpenAccountCommand extends Command {
 
   protected validate(): void {
     const errors: ValidationErrorDetail[] = [];
-    if (!this.accountId) errors.push({ code: 'accountId', message: 'accountId is required' });
-    if (!this.email) errors.push({ code: 'email', message: 'email is required' });
+    if (!this.accountId) {
+      errors.push({ code: 'accountId', message: 'accountId is required' });
+    }
+    if (!this.email) {
+      errors.push({ code: 'email', message: 'email is required' });
+    }
     if (errors.length) {
       throw new ValidationErrors(errors);
     }
@@ -492,43 +496,3 @@ if (result.isFailed()) {
 | Domain error         | descriptive + `Exception` (extends `DomainError`) | `AccountAlreadyExistsException`   |
 | File                 | `kebab-case.ts`                                   | `open-account-command-handler.ts` |
 
----
-
-## File / Folder Structure
-
-```
-src/
-  domain/
-    account/
-      account.ts
-      account-id.ts
-      email.ts
-      account-opened.ts             # DomainEvent
-      account-repository.ts         # Repository interface
-      account-already-exists.exception.ts
-      index.ts
-  application/
-    open-account/
-      open-account.command.ts
-      open-account.handler.ts
-      account-opened.domain-event-handler.ts
-      account-opened.integration-event.ts
-      send-welcome-email.task.ts
-      send-welcome-email.task-handler.ts
-      index.ts
-    index.ts
-  infrastructure/
-    persistence/
-      postgres-account.repository.ts
-    outbox/
-      outbox-integration-event-publisher.ts
-      outbox-task-scheduler.ts
-    index.ts
-  index.ts
-```
-
-**Rules:**
-
-- One concept per file; no god files
-- Barrel `index.ts` at each layer boundary — never import across layers by deep path
-- Infrastructure imports Application and Domain; Application imports Domain only; Domain imports nothing from this codebase

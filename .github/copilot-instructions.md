@@ -34,12 +34,12 @@ Three layers with a strict inward dependency rule: infrastructure → applicatio
 
 ### `src/infrastructure/` — concrete implementations
 
-| Component                                     | Role                                                                           |
-| --------------------------------------------- | ------------------------------------------------------------------------------ |
-| `RegistryCommandBus` / `RegistryQueryBus`     | Registry-based routing.                                                        |
-| `TransactionalCommandBus`                     | Decorator. Wraps dispatch in a `UnitOfWork`.                                   |
-| `DomainEventPublishingRepository`             | Decorator. Calls `publisher.publish(entity.getDomainEvents())` after `save`.   |
-| `CommandBusBuilder` / `QueryBusBuilder`       | Fluent builders. Declaration order = stack order (first declared = outermost). |
+| Component                                 | Role                                                                           |
+| ----------------------------------------- | ------------------------------------------------------------------------------ |
+| `RegistryCommandBus` / `RegistryQueryBus` | Registry-based routing.                                                        |
+| `TransactionalCommandBus`                 | Decorator. Wraps dispatch in a `UnitOfWork`.                                   |
+| `DomainEventPublishingRepository`         | Decorator. Calls `publisher.publish(entity.getDomainEvents())` after `save`.   |
+| `CommandBusBuilder` / `QueryBusBuilder`   | Fluent builders. Declaration order = stack order (first declared = outermost). |
 
 ---
 
