@@ -56,13 +56,12 @@ jobs:
 
       - name: Publish to npm
         run: |
+          npm config delete //registry.npmjs.org/:_authToken
           if npm view "@aseguragonzalez/ts-seedwork@${{ steps.pre.outputs.version }}" > /dev/null 2>&1; then
             echo "Version already published to npm, skipping."
           else
-            npm publish --tag ${{ steps.pre.outputs.tag }}
+            npm publish --provenance --tag ${{ steps.pre.outputs.tag }}
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Set up Node.js for GitHub Packages
         uses: actions/setup-node@v6
