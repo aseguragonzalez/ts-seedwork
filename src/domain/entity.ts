@@ -5,6 +5,8 @@ export abstract class Entity<TId> {
     }
   }
 
+  protected abstract validate(): void;
+
   public equals(other: Entity<TId>): boolean {
     if (!(other instanceof Entity)) {
       return false;

@@ -1,9 +1,11 @@
 // Application — CQRS / Commands
-export type { Command, CommandBus, CommandBusMiddleware, CommandHandler, ResultError } from './application/commands.js';
+export type { CommandBus, CommandBusMiddleware, CommandHandler, ResultError } from './application/commands.js';
+export { Command } from './application/commands.js';
 export { Result } from './application/commands.js';
 
 // Application — CQRS / Queries
-export type { Query, QueryBus, QueryBusMiddleware, QueryHandler } from './application/queries.js';
+export type { QueryBus, QueryBusMiddleware, QueryHandler } from './application/queries.js';
+export { Query } from './application/queries.js';
 export { Maybe } from './application/queries.js';
 
 // Application — Validation
@@ -55,12 +57,10 @@ export { DeferredDomainEventBus } from './infrastructure/deferred-domain-event-b
 export { DomainEventCoordinatorCommandBus } from './infrastructure/domain-event-coordinator-command-bus.js';
 export { RegistryCommandBus } from './infrastructure/registry-command-bus.js';
 export { TransactionalCommandBus } from './infrastructure/transactional-command-bus.js';
-export { ValidationCommandBus } from './infrastructure/validation-command-bus.js';
 
 // Infrastructure — Query Bus
 export { QueryBusBuilder } from './infrastructure/query-bus-builder.js';
 export { RegistryQueryBus } from './infrastructure/registry-query-bus.js';
-export { ValidationQueryBus } from './infrastructure/validation-query-bus.js';
 
 // Infrastructure — Repository
 export { DomainEventPublishingRepository } from './infrastructure/domain-event-publishing-repository.js';

@@ -31,7 +31,10 @@ class TestAggregate extends AggregateRoot<TestId> {
   }
   private constructor(id: TestId, events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = []) {
     super(id, events);
+    this.validate();
   }
+
+  protected validate(): void {}
 }
 
 class InMemoryTestRepository implements Repository<TestId, TestAggregate> {

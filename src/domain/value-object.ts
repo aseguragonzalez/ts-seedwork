@@ -1,6 +1,8 @@
 export abstract class ValueObject {
   protected constructor() {}
 
+  protected abstract validate(): void;
+
   public equals(other: ValueObject): boolean {
     if (!(other instanceof ValueObject)) {
       return false;

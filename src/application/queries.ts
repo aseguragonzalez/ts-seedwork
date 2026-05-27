@@ -22,8 +22,9 @@ export class Maybe<T> {
   }
 }
 
-export interface Query {
-  validate(): void;
+export abstract class Query {
+  protected constructor() {}
+  protected abstract validate(): void;
 }
 
 export interface QueryHandler<TQuery extends Query, TResult> {

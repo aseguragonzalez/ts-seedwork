@@ -7,7 +7,10 @@ class Money extends ValueObject {
     public readonly currency: string
   ) {
     super();
+    this.validate();
   }
+
+  protected validate(): void {}
 }
 
 class Price extends ValueObject {
@@ -17,7 +20,10 @@ class Price extends ValueObject {
     public readonly vat: Money
   ) {
     super();
+    this.validate();
   }
+
+  protected validate(): void {}
 }
 
 class DateRange extends ValueObject {
@@ -27,13 +33,19 @@ class DateRange extends ValueObject {
     public readonly to: Date
   ) {
     super();
+    this.validate();
   }
+
+  protected validate(): void {}
 }
 
 class TagList extends ValueObject {
   constructor(public readonly tags: string[]) {
     super();
+    this.validate();
   }
+
+  protected validate(): void {}
 }
 
 describe('ValueObject — nested equality (seedwork package)', () => {

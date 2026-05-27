@@ -1,9 +1,13 @@
-import { Command, CommandBus, Result } from '@src/application/commands';
+import { Command, type CommandBus, Result } from '@src/application/commands';
 import { UnitOfWork } from '@src/domain/unit-of-work';
 import { TransactionalCommandBus } from '@src/infrastructure/transactional-command-bus';
 
-class DoSomething implements Command {
-  validate(): void {}
+class DoSomething extends Command {
+  constructor() {
+    super();
+    this.validate();
+  }
+  protected validate(): void {}
 }
 
 describe('TransactionalCommandBus (seedwork package)', () => {

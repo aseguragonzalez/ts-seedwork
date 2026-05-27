@@ -1,7 +1,10 @@
 import { Query } from '@aseguragonzalez/ts-seedwork';
 
-export class GetBalanceQuery implements Query {
-  constructor(public readonly accountId: string) {}
+export class GetBalanceQuery extends Query {
+  constructor(public readonly accountId: string) {
+    super();
+    this.validate();
+  }
 
-  validate(): void {}
+  protected validate(): void {}
 }

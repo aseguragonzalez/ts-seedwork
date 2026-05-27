@@ -1,13 +1,16 @@
 import { Command, ValidationErrorDetail, ValidationErrors } from '@aseguragonzalez/ts-seedwork';
 
-export class WithdrawMoneyCommand implements Command {
+export class WithdrawMoneyCommand extends Command {
   constructor(
     public readonly accountId: string,
     public readonly amount: number,
     public readonly currency: string
-  ) {}
+  ) {
+    super();
+    this.validate();
+  }
 
-  validate(): void {
+  protected validate(): void {
     const errors: ValidationErrorDetail[] = [];
     if (!this.accountId) {
       errors.push({ code: 'INVALID_ACCOUNT_ID', message: 'Account ID is required' });

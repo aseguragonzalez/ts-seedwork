@@ -16,7 +16,10 @@ class User extends AggregateRoot<UserId> {
     public readonly name: string
   ) {
     super(id);
+    this.validate();
   }
+
+  protected validate(): void {}
 }
 
 class UserRepository extends InMemoryRepository<UserId, User> {}

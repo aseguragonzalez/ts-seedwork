@@ -38,13 +38,11 @@ export function buildCommandBus() {
     .register(OpenAccountCommand, new OpenAccountHandler(publishingRepository))
     .register(DepositMoneyCommand, new DepositMoneyHandler(publishingRepository))
     .register(WithdrawMoneyCommand, new WithdrawMoneyHandler(publishingRepository))
-    .withValidation()
     .withDomainEventCoordination(domainEventBus)
     .build();
 
   const queryBus = new QueryBusBuilder()
     .register(GetBalanceQuery, new GetBalanceHandler(bankAccountRepository))
-    .withValidation()
     .build();
 
   return { commandBus, queryBus, integrationEventPublisher, taskScheduler, domainEventBus };

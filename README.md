@@ -62,12 +62,12 @@ The [Component Reference](docs/component-reference.md) covers every class and in
 
 ## What's included
 
-| Layer              | Components                                                                                                                                                                                                                                                                                                |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Shared**         | `Logger`                                                                                                                                                                                                                                                                                                  |
-| **Domain**         | `Entity`, `AggregateRoot`, `ValueObject`, `BaseDomainEvent`, `Repository`, `UnitOfWork`, `DomainError`                                                                                                                                                                                                    |
-| **Application**    | `Command`/`CommandBus`/`CommandHandler`, `Query`/`QueryBus`/`QueryHandler`, `Result`, `Maybe`, `DomainEventBusPublisher`/`DomainEventBusSubscriber`/`DomainEventBus`, `DomainEventHandler`, `IntegrationEvent`/`IntegrationEventHandler`/`IntegrationEventPublisher`, `BackgroundTask`/`TaskScheduler`    |
-| **Infrastructure** | `RegistryCommandBus`, `RegistryQueryBus`, `TransactionalCommandBus`, `ValidationCommandBus`, `ValidationQueryBus`, `DomainEventCoordinatorCommandBus`, `DeferredDomainEventBus`, `DomainEventPublishingRepository`, `InMemoryRepository`, `InMemoryTaskScheduler`, `CommandBusBuilder`, `QueryBusBuilder` |
+| Layer              | Components                                                                                                                                                                                                                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Shared**         | `Logger`                                                                                                                                                                                                                                                                                               |
+| **Domain**         | `Entity`, `AggregateRoot`, `ValueObject`, `BaseDomainEvent`, `Repository`, `UnitOfWork`, `DomainError`                                                                                                                                                                                                 |
+| **Application**    | `Command`/`CommandBus`/`CommandHandler`, `Query`/`QueryBus`/`QueryHandler`, `Result`, `Maybe`, `DomainEventBusPublisher`/`DomainEventBusSubscriber`/`DomainEventBus`, `DomainEventHandler`, `IntegrationEvent`/`IntegrationEventHandler`/`IntegrationEventPublisher`, `BackgroundTask`/`TaskScheduler` |
+| **Infrastructure** | `RegistryCommandBus`, `RegistryQueryBus`, `TransactionalCommandBus`, `DomainEventCoordinatorCommandBus`, `DeferredDomainEventBus`, `DomainEventPublishingRepository`, `InMemoryRepository`, `InMemoryTaskScheduler`, `CommandBusBuilder`, `QueryBusBuilder`                                            |
 
 ## Built with
 
@@ -101,6 +101,18 @@ Comprehensive guides are available in the [`docs/`](docs/) directory:
 - [Changelog](CHANGELOG.md)
 
 A complete [Bank Account example](docs/examples/bank-account/) demonstrates all patterns end-to-end.
+
+### Run docs locally
+
+The documentation site is built with [VitePress](https://vitepress.dev). After installing dependencies (`npm ci`):
+
+| Task                     | Command                |
+| ------------------------ | ---------------------- |
+| Start dev server         | `npm run docs:dev`     |
+| Build static site        | `npm run docs:build`   |
+| Preview production build | `npm run docs:preview` |
+
+`npm run docs:dev` starts a hot-reloading server at `http://localhost:5173` — edit any file under `docs/` and the browser refreshes instantly.
 
 ## Requirements
 

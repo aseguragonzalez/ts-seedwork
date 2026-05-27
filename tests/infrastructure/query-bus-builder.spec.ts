@@ -1,14 +1,12 @@
-import type { Query, QueryBus, QueryHandler } from '@src';
-import { Maybe, ValidationErrors } from '@src';
+import { Maybe, Query, type QueryBus, type QueryHandler } from '@src';
 import { QueryBusBuilder } from '@src/infrastructure/query-bus-builder';
 
-class GetSomething implements Query {
-  constructor(public readonly valid: boolean = true) {}
-  validate(): void {
-    if (!this.valid) {
-      throw new ValidationErrors([{ code: 'INVALID', message: 'invalid' }]);
-    }
+class GetSomething extends Query {
+  constructor() {
+    super();
+    this.validate();
   }
+  protected validate(): void {}
 }
 
 class GetSomethingHandler implements QueryHandler<GetSomething, string> {
@@ -66,26 +64,6 @@ describe('QueryBusBuilder', () => {
     });
   });
 
-  describe('withValidation', () => {
-    it('dispatches when query is valid', async () => {
-      const handler = new GetSomethingHandler();
-      const bus = new QueryBusBuilder().register(GetSomething, handler).withValidation().build();
-
-      const result = await bus.ask<string>(new GetSomething(true));
-
-      expect(result.isJust()).toBe(true);
-      expect(handler.calls).toBe(1);
-    });
-
-    it('throws ValidationErrors before reaching handler when query is invalid', async () => {
-      const handler = new GetSomethingHandler();
-      const bus = new QueryBusBuilder().register(GetSomething, handler).withValidation().build();
-
-      await expect(bus.ask(new GetSomething(false))).rejects.toThrow(ValidationErrors);
-      expect(handler.calls).toBe(0);
-    });
-  });
-
   describe('use (custom steps)', () => {
     it('custom step is invoked during ask', async () => {
       const handler = new GetSomethingHandler();
@@ -96,15 +74,6 @@ describe('QueryBusBuilder', () => {
 
       expect(calls).toEqual(['before', 'after']);
       expect(handler.calls).toBe(1);
-    });
-
-    it('custom step declared after withValidation runs inside validation', async () => {
-      const handler = new GetSomethingHandler();
-      const { factory, calls } = makeSpy();
-      const bus = new QueryBusBuilder().register(GetSomething, handler).withValidation().use(factory).build();
-
-      await expect(bus.ask(new GetSomething(false))).rejects.toThrow(ValidationErrors);
-      expect(calls).toHaveLength(0);
     });
 
     it('multiple custom steps run in declaration order', async () => {

@@ -8,10 +8,14 @@ export class Money extends ValueObject {
     public readonly currency: string
   ) {
     super();
-    if (amount < 0) {
-      throw new InvalidAmountError(amount);
+    this.validate();
+  }
+
+  protected validate(): void {
+    if (this.amount < 0) {
+      throw new InvalidAmountError(this.amount);
     }
-    if (!currency || currency.trim() === '') {
+    if (!this.currency || this.currency.trim() === '') {
       throw new InvalidCurrencyError();
     }
   }

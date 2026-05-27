@@ -8,13 +8,19 @@ describe('Entity (seedwork package)', () => {
       public readonly name: string
     ) {
       super(id);
+      this.validate();
     }
+
+    protected validate(): void {}
   }
 
   class NumericEntity extends Entity<number> {
     constructor(id: number) {
       super(id);
+      this.validate();
     }
+
+    protected validate(): void {}
   }
 
   it('throws if id is undefined', () => {
@@ -39,6 +45,37 @@ describe('Entity (seedwork package)', () => {
     expect(entity.name).toBe('foo');
   });
 
+  it('calls validate() on construction', () => {
+    class ValidatedEntity extends Entity<string> {
+      public validateCalled = false;
+      constructor(id: string) {
+        super(id);
+        this.validate();
+      }
+      protected validate(): void {
+        this.validateCalled = true;
+      }
+    }
+    const entity = new ValidatedEntity('id-1');
+    expect(entity.validateCalled).toBe(true);
+  });
+
+  it('throws during construction if validate() throws', () => {
+    class StrictEntity extends Entity<string> {
+      constructor(id: string) {
+        super(id);
+        this.validate();
+      }
+      protected validate(): void {
+        if (this.id.length < 3) {
+          throw new Error('id too short');
+        }
+      }
+    }
+    expect(() => new StrictEntity('x')).toThrow('id too short');
+    expect(() => new StrictEntity('abc')).not.toThrow();
+  });
+
   it('should compare equality by id', () => {
     const a = new TestEntity('id-1', 'foo');
     const b = new TestEntity('id-1', 'bar');
@@ -58,7 +95,9 @@ describe('Entity (seedwork package)', () => {
     class OtherEntity extends Entity<string> {
       constructor(id: string) {
         super(id);
+        this.validate();
       }
+      protected validate(): void {}
     }
     const a = new TestEntity('id-1', 'foo');
     const b = new OtherEntity('id-1');
@@ -76,13 +115,17 @@ describe('Entity (seedwork package)', () => {
     class AccountId extends ValueObject {
       constructor(public readonly value: string) {
         super();
+        this.validate();
       }
+      protected validate(): void {}
     }
 
     class AccountEntity extends Entity<AccountId> {
       constructor(id: AccountId) {
         super(id);
+        this.validate();
       }
+      protected validate(): void {}
     }
 
     it('uses ValueObject.equals when id has an equals method', () => {

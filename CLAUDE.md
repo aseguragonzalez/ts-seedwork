@@ -87,9 +87,58 @@ This is a DDD seedwork library (`@aseguragonzalez/ts-seedwork`) published to npm
 - `RegistryCommandBus` — maps command types to handlers via a registry
 - `RegistryQueryBus` — same pattern for queries
 - `TransactionalCommandBus` — decorator wrapping any `CommandBus` with `UnitOfWork` session/commit/rollback
-- `ValidationCommandBus` — decorator that calls `command.validate()` before dispatch
 - `DomainEventPublishingRepository` — decorator wrapping any `Repository`; calls `publisher.publish(entity.getDomainEvents())` after `save`
 - `CommandBusBuilder` / `QueryBusBuilder` — fluent builders; declaration order determines stack (first declared = outermost)
+
+### validate() pattern
+
+`Entity`, `AggregateRoot`, `ValueObject`, `Command`, and `Query` all declare `protected abstract validate(): void`. Each concrete subclass must implement it and call `this.validate()` explicitly at the end of its own constructor, after all parameter properties are assigned.
+
+The error type differs by layer:
+
+- **`Entity` / `AggregateRoot` / `ValueObject`** — throw a `DomainError` subclass for any invariant violation.
+- **`Command` / `Query`** — throw `ValidationErrors` (application layer) for invalid input.
+
+```typescript
+// Domain layer — throws DomainError subclass
+class Money extends ValueObject {
+  constructor(
+    public readonly amount: number,
+    public readonly currency: string
+  ) {
+    super();
+    this.validate(); // called after properties are assigned
+  }
+  protected validate(): void {
+    if (this.amount < 0) {
+      throw new InvalidAmountError(this.amount);
+    }
+  }
+}
+
+// Application layer — throws ValidationErrors
+class OpenAccountCommand extends Command {
+  constructor(
+    public readonly accountId: string,
+    public readonly email: string
+  ) {
+    super();
+    this.validate();
+  }
+  protected validate(): void {
+    const errors: ValidationErrorDetail[] = [];
+    if (!this.accountId) {
+      errors.push({ code: 'accountId', message: 'accountId is required' });
+    }
+    if (!this.email) {
+      errors.push({ code: 'email', message: 'email is required' });
+    }
+    if (errors.length) {
+      throw new ValidationErrors(errors);
+    }
+  }
+}
+```
 
 ### Typical composition
 
@@ -98,7 +147,6 @@ const repository = new DomainEventPublishingRepository(new BankAccountRepository
 
 const bus = new CommandBusBuilder()
   .register(OpenAccountCommand, new OpenAccountHandler(repository))
-  .withValidation() // outermost — declared first
   .withTransaction(unitOfWork)
   .build();
 ```

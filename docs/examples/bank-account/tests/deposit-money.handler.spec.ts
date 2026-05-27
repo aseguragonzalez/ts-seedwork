@@ -3,7 +3,6 @@ import {
   DomainEventBusPublisher,
   DomainEventPublishingRepository,
   RegistryCommandBus,
-  ValidationCommandBus,
   ValidationErrors,
 } from '@aseguragonzalez/ts-seedwork';
 
@@ -18,7 +17,7 @@ import { InMemoryBankAccountRepository } from '../infrastructure/in-memory-bank-
 describe('DepositMoneyHandler', () => {
   let innerRepo: InMemoryBankAccountRepository;
   let published: DomainEvent[];
-  let bus: ValidationCommandBus;
+  let bus: RegistryCommandBus;
 
   beforeEach(async () => {
     innerRepo = new InMemoryBankAccountRepository();
@@ -29,10 +28,9 @@ describe('DepositMoneyHandler', () => {
       },
     };
     const repository = new DomainEventPublishingRepository(innerRepo, publisher);
-    const registry = new RegistryCommandBus();
-    registry.register(OpenAccountCommand, new OpenAccountHandler(repository));
-    registry.register(DepositMoneyCommand, new DepositMoneyHandler(repository));
-    bus = new ValidationCommandBus(registry);
+    bus = new RegistryCommandBus();
+    bus.register(OpenAccountCommand, new OpenAccountHandler(repository));
+    bus.register(DepositMoneyCommand, new DepositMoneyHandler(repository));
     await bus.dispatch(new OpenAccountCommand('acc-1', 'Alice', 100, 'EUR'));
     published = [];
   });
@@ -59,7 +57,7 @@ describe('DepositMoneyHandler', () => {
     expect(result.errors[0].code).toBe('NOT_FOUND');
   });
 
-  it('throws ValidationErrors when amount is not positive', async () => {
-    await expect(bus.dispatch(new DepositMoneyCommand('acc-1', 0, 'EUR'))).rejects.toThrow(ValidationErrors);
+  it('throws ValidationErrors when amount is not positive', () => {
+    expect(() => new DepositMoneyCommand('acc-1', 0, 'EUR')).toThrow(ValidationErrors);
   });
 });
