@@ -1,5 +1,4 @@
-import type { Query, QueryHandler } from '@src/application/queries';
-import { Maybe } from '@src/application/queries';
+import { Maybe, Query, type QueryHandler } from '@src/application/queries';
 import { RegistryQueryBus } from '@src/infrastructure/registry-query-bus';
 
 interface UserData {
@@ -7,9 +6,12 @@ interface UserData {
   name: string;
 }
 
-class GetUserQuery implements Query {
-  constructor(public readonly id: string) {}
-  validate(): void {}
+class GetUserQuery extends Query {
+  constructor(public readonly id: string) {
+    super();
+    this.validate();
+  }
+  protected validate(): void {}
 }
 
 class GetUserHandler implements QueryHandler<GetUserQuery, UserData> {

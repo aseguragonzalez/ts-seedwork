@@ -85,7 +85,7 @@ static reconstitute(id: BankAccountId, owner: string, balance: Money): BankAccou
 ### `ValueObject`
 
 - **Role:** Immutable object defined entirely by its attributes. Two value objects are equal when all their properties are equal.
-- **Usage:** Extend and keep all properties `readonly`. Call `super()` from your constructor. Validate in the constructor and throw a domain-specific error on invalid state.
+- **Usage:** Extend and keep all properties `readonly`. Call `super()` from your constructor, then call `this.validate()` after all properties are assigned. Implement `protected validate(): void` — throw a domain-specific error on invalid state.
 - **Supported property types in `equals`:** primitives (`===`), nested `ValueObject` (recursive), `Date` (by timestamp), arrays of the previous types.
 - **Key methods:** `equals(other: ValueObject): boolean`, `toString(): string` (auto-generated from property names and values).
 
@@ -96,7 +96,11 @@ class Money extends ValueObject {
     public readonly currency: string
   ) {
     super();
-    if (amount < 0) {
+    this.validate();
+  }
+
+  protected validate(): void {
+    if (this.amount < 0) {
       throw new InvalidAmountError();
     }
   }
@@ -186,7 +190,7 @@ res.status(204).send();
 
 ### `Command` / `CommandBus` / `CommandHandler`
 
-- **`Command`** — marker interface; implemented by command DTOs. Requires `validate(): void` — the compiler enforces the method; calling it is opt-in via `ValidationCommandBus`.
+- **`Command`** — abstract base class for command DTOs. Requires `protected abstract validate(): void` — TypeScript enforces the implementation. The subclass calls `this.validate()` at the end of its constructor, guaranteeing validation at construction time. `extends Command`, not `implements Command`.
 - **`CommandHandler<TCommand>`** — `handle(command: TCommand): Promise<void>`.
 - **`CommandBus`** — `dispatch(command: Command): Promise<Result>`. The entry point for write operations.
 - **Usage:** One command class and one handler per write use case. Commands carry intent and primitives — no domain objects at the port boundary when avoidable.
@@ -212,7 +216,7 @@ return res.json(result.value);
 
 ### `Query` / `QueryBus` / `QueryHandler`
 
-- **`Query`** — interface for query DTOs. Requires `validate(): void` — implement with a no-op body when no validation is needed. The compiler enforces the method exists; calling it is the developer's responsibility (opt-in via `ValidationQueryBus`).
+- **`Query`** — abstract base class for query DTOs. Same pattern as `Command`: requires `protected abstract validate(): void`; the subclass calls `this.validate()` at the end of its constructor. Use a no-op body when no validation is needed. `extends Query`, not `implements Query`.
 - **`QueryHandler<TQuery, T>`** — `handle(query: TQuery): Promise<Maybe<T>>`.
 - **`QueryBus`** — `ask<T>(query: Query): Promise<Maybe<T>>`. Entry point for reads.
 - **Usage:** One query class and one handler per read use case. Handlers return plain projection types — never domain entities.
@@ -251,21 +255,10 @@ return res.json(result.value);
 
 ---
 
-### `ValidationQueryBus`
-
-- **Role:** `QueryBus` decorator. Calls `query.validate()` before delegating.
-- **Usage:** Opt-in. Wrap the inner query bus when query DTOs carry a `validate()` method. `ValidationErrors` propagates as an exception — it is not caught.
-
-```typescript
-const queryBus = new ValidationQueryBus(new RegistryQueryBus());
-```
-
----
-
 ### `TransactionalCommandBus`
 
 - **Role:** `CommandBus` decorator. Wraps every dispatch in a `UnitOfWork` transaction: `createSession → dispatch → commit` on success, `rollback + rethrow` on exception.
-- **Usage:** Pass any `CommandBus` and a `UnitOfWork` implementation. Typically placed inside `ValidationCommandBus` so validation errors do not open a transaction — use `CommandBusBuilder` to wire the stack in the right order.
+- **Usage:** Pass any `CommandBus` and a `UnitOfWork` implementation. Because commands validate in their constructor, validation errors are always raised before `dispatch` is called — the transaction never opens for an invalid command.
 
 ---
 
@@ -299,23 +292,25 @@ class DepositMoneyHandler implements CommandHandler<DepositMoneyCommand> {
 - **Role:** Fluent builder for assembling a `CommandBus` stack.
 - **Methods:**
   - `.register(CommandClass, handler)` — wire a handler for a command type. Calling it multiple times with the same class overwrites the previous handler.
-  - `.withValidation()` — add `ValidationCommandBus`.
   - `.withTransaction(unitOfWork)` — add `TransactionalCommandBus`. Calling it multiple times nests multiple transaction layers.
+  - `.withDomainEventCoordination(domainEventBus)` — add `DomainEventCoordinatorCommandBus`.
   - `.use(factory)` — add any custom `CommandBus` middleware.
   - `.build()` — return the assembled `CommandBus`.
-- **Composition order:** declaration order determines the stack — the first declared step is outermost. To get `Validation → Transaction → Registry`, call `.withValidation()` before `.withTransaction()`.
+- **Composition order:** declaration order determines the stack — the first declared step is outermost.
 
 ```typescript
 const bus = new CommandBusBuilder()
   .register(OpenAccountCommand, new OpenAccountHandler(repo))
   .register(DepositMoneyCommand, new DepositMoneyHandler(repo))
-  .withValidation() // outermost — validates before opening the transaction
   .withTransaction(unitOfWork)
+  .withDomainEventCoordination(domainEventBus)
   .build();
 ```
 
 With this stack, each dispatch:
 
-1. Validates the command (`withValidation`) — throws `ValidationErrors` before a transaction is opened
-2. Opens a transaction (`withTransaction`) — commits on success, rolls back and rethrows on unexpected exception
+1. Opens a transaction (`withTransaction`) — commits on success, rolls back and rethrows on unexpected exception
+2. Dispatches deferred domain events after the handler returns (`withDomainEventCoordination`)
 3. Executes the handler (`registry`) — `DomainError` maps to `Result.failed`; other exceptions propagate
+
+Validation happens at construction time — `new OpenAccountCommand(...)` throws `ValidationErrors` immediately if the input is invalid, before the command ever reaches the bus.

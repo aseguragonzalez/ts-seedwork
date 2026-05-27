@@ -30,8 +30,9 @@ export class Result {
   }
 }
 
-export interface Command {
-  validate(): void;
+export abstract class Command {
+  protected constructor() {}
+  protected abstract validate(): void;
 }
 
 export interface CommandHandler<TCommand extends Command> {

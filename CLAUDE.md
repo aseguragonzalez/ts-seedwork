@@ -87,9 +87,29 @@ This is a DDD seedwork library (`@aseguragonzalez/ts-seedwork`) published to npm
 - `RegistryCommandBus` — maps command types to handlers via a registry
 - `RegistryQueryBus` — same pattern for queries
 - `TransactionalCommandBus` — decorator wrapping any `CommandBus` with `UnitOfWork` session/commit/rollback
-- `ValidationCommandBus` — decorator that calls `command.validate()` before dispatch
 - `DomainEventPublishingRepository` — decorator wrapping any `Repository`; calls `publisher.publish(entity.getDomainEvents())` after `save`
 - `CommandBusBuilder` / `QueryBusBuilder` — fluent builders; declaration order determines stack (first declared = outermost)
+
+### validate() pattern
+
+`Entity`, `ValueObject`, `Command`, and `Query` all declare `protected abstract validate(): void`. Each concrete subclass must implement it and call `this.validate()` explicitly at the end of its own constructor, after all parameter properties are assigned:
+
+```typescript
+class Money extends ValueObject {
+  constructor(
+    public readonly amount: number,
+    public readonly currency: string
+  ) {
+    super();
+    this.validate(); // called after properties are assigned
+  }
+  protected validate(): void {
+    if (this.amount < 0) {
+      throw new InvalidAmountError(this.amount);
+    }
+  }
+}
+```
 
 ### Typical composition
 
@@ -98,7 +118,6 @@ const repository = new DomainEventPublishingRepository(new BankAccountRepository
 
 const bus = new CommandBusBuilder()
   .register(OpenAccountCommand, new OpenAccountHandler(repository))
-  .withValidation() // outermost — declared first
   .withTransaction(unitOfWork)
   .build();
 ```

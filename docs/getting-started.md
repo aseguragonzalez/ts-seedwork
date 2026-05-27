@@ -20,7 +20,10 @@ import { AggregateRoot, BaseDomainEvent, TypedDomainEvent, ValueObject } from '@
 class AccountId extends ValueObject {
   constructor(public readonly value: string) {
     super();
+    this.validate();
   }
+
+  protected validate(): void {}
 }
 
 class AccountOpened extends BaseDomainEvent<{ accountId: string; balance: number }> {
@@ -39,7 +42,10 @@ class BankAccount extends AggregateRoot<AccountId> {
     events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = []
   ) {
     super(id, events);
+    this.validate();
   }
+
+  protected validate(): void {}
 
   static open(id: AccountId, initialBalance: number): BankAccount {
     const event = AccountOpened.create(id.value, initialBalance);
@@ -69,13 +75,16 @@ Commands express write intentions. The handler's job is orchestration only: load
 ```typescript
 import { Command, CommandHandler, ValidationErrorDetail, ValidationErrors } from '@aseguragonzalez/ts-seedwork';
 
-class OpenAccountCommand implements Command {
+class OpenAccountCommand extends Command {
   constructor(
     public readonly accountId: string,
     public readonly balance: number
-  ) {}
+  ) {
+    super();
+    this.validate();
+  }
 
-  validate(): void {
+  protected validate(): void {
     const errors: ValidationErrorDetail[] = [];
     if (this.balance < 0) {
       errors.push({ code: 'INVALID_BALANCE', message: 'Balance cannot be negative' });
@@ -108,7 +117,6 @@ const repository = new DomainEventPublishingRepository(new BankAccountRepository
 
 const bus = new CommandBusBuilder()
   .register(OpenAccountCommand, new OpenAccountHandler(repository))
-  .withValidation() // outermost — validates before opening a transaction
   .withTransaction(unitOfWork)
   .build();
 ```

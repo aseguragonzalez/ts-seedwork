@@ -1,10 +1,13 @@
-import type { Command, CommandBus } from '@src';
-import { Result } from '@src';
+import { Command, type CommandBus, Result } from '@src';
 import { DeferredDomainEventBus } from '@src/infrastructure/deferred-domain-event-bus';
 import { DomainEventCoordinatorCommandBus } from '@src/infrastructure/domain-event-coordinator-command-bus';
 
-class DoSomething implements Command {
-  validate(): void {}
+class DoSomething extends Command {
+  constructor() {
+    super();
+    this.validate();
+  }
+  protected validate(): void {}
 }
 
 const makeInner = (impl: (command: Command) => Promise<Result>): CommandBus => ({

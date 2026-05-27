@@ -10,7 +10,10 @@ class TestEvent extends BaseDomainEvent<{ value: string }> {
 class TestAggregate extends AggregateRoot<string> {
   constructor(id: string, events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = []) {
     super(id, events);
+    this.validate();
   }
+
+  protected validate(): void {}
 
   trigger(value: string): TestAggregate {
     return new TestAggregate(this.id, [...this.getDomainEvents(), new TestEvent(this.id, value)]);

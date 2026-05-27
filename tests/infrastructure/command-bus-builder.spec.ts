@@ -1,16 +1,14 @@
-import type { Command, CommandBus, CommandHandler } from '@src';
-import { DomainError, Result, ValidationErrors } from '@src';
+import { Command, type CommandBus, type CommandHandler, DomainError, Result } from '@src';
 import type { UnitOfWork } from '@src/domain/unit-of-work';
 import { CommandBusBuilder } from '@src/infrastructure/command-bus-builder';
 import { DeferredDomainEventBus } from '@src/infrastructure/deferred-domain-event-bus';
 
-class DoSomething implements Command {
-  constructor(public readonly valid: boolean = true) {}
-  validate(): void {
-    if (!this.valid) {
-      throw new ValidationErrors([{ code: 'INVALID', message: 'invalid' }]);
-    }
+class DoSomething extends Command {
+  constructor() {
+    super();
+    this.validate();
   }
+  protected validate(): void {}
 }
 
 class DoSomethingHandler implements CommandHandler<DoSomething> {
@@ -91,26 +89,6 @@ describe('CommandBusBuilder', () => {
     });
   });
 
-  describe('withValidation', () => {
-    it('dispatches when command is valid', async () => {
-      const handler = new DoSomethingHandler();
-      const bus = new CommandBusBuilder().register(DoSomething, handler).withValidation().build();
-
-      const result = await bus.dispatch(new DoSomething(true));
-
-      expect(result.isOk()).toBe(true);
-      expect(handler.calls).toBe(1);
-    });
-
-    it('throws ValidationErrors before reaching handler when command is invalid', async () => {
-      const handler = new DoSomethingHandler();
-      const bus = new CommandBusBuilder().register(DoSomething, handler).withValidation().build();
-
-      await expect(bus.dispatch(new DoSomething(false))).rejects.toThrow(ValidationErrors);
-      expect(handler.calls).toBe(0);
-    });
-  });
-
   describe('withTransaction', () => {
     it('opens session and commits on ok result', async () => {
       const uow = makeUow();
@@ -163,41 +141,6 @@ describe('CommandBusBuilder', () => {
     });
   });
 
-  describe('withValidation + withTransaction', () => {
-    it('validates before opening the transaction when validation is declared first', async () => {
-      const uow = makeUow();
-      const handler = new DoSomethingHandler();
-      const bus = new CommandBusBuilder().register(DoSomething, handler).withValidation().withTransaction(uow).build();
-
-      await expect(bus.dispatch(new DoSomething(false))).rejects.toThrow(ValidationErrors);
-      expect(uow.createSession).not.toHaveBeenCalled();
-      expect(handler.calls).toBe(0);
-    });
-
-    it('full stack succeeds for a valid command', async () => {
-      const uow = makeUow();
-      const handler = new DoSomethingHandler();
-      const bus = new CommandBusBuilder().register(DoSomething, handler).withValidation().withTransaction(uow).build();
-
-      const result = await bus.dispatch(new DoSomething(true));
-
-      expect(result.isOk()).toBe(true);
-      expect(uow.commit).toHaveBeenCalledTimes(1);
-      expect(handler.calls).toBe(1);
-    });
-
-    it('composition order of builder calls determines stack order', async () => {
-      const uow = makeUow();
-      const handler = new DoSomethingHandler();
-      // withTransaction declared first → outermost → session opens even when validation fails
-      const bus = new CommandBusBuilder().register(DoSomething, handler).withTransaction(uow).withValidation().build();
-
-      await expect(bus.dispatch(new DoSomething(false))).rejects.toThrow(ValidationErrors);
-      expect(uow.createSession).toHaveBeenCalledTimes(1);
-      expect(uow.rollback).toHaveBeenCalledTimes(1);
-    });
-  });
-
   describe('use (custom steps)', () => {
     it('custom step is invoked during dispatch', async () => {
       const handler = new DoSomethingHandler();
@@ -208,15 +151,6 @@ describe('CommandBusBuilder', () => {
 
       expect(calls).toEqual(['before', 'after']);
       expect(handler.calls).toBe(1);
-    });
-
-    it('custom step declared after withValidation runs inside validation', async () => {
-      const handler = new DoSomethingHandler();
-      const { factory, calls } = makeSpy();
-      const bus = new CommandBusBuilder().register(DoSomething, handler).withValidation().use(factory).build();
-
-      await expect(bus.dispatch(new DoSomething(false))).rejects.toThrow(ValidationErrors);
-      expect(calls).toHaveLength(0);
     });
 
     it('multiple custom steps run in declaration order', async () => {

@@ -1,9 +1,12 @@
-import type { Command, CommandHandler } from '@src/application/commands';
+import { Command, type CommandHandler } from '@src/application/commands';
 import { RegistryCommandBus } from '@src/infrastructure/registry-command-bus';
 
-class CreateUserCommand implements Command {
-  constructor(public readonly name: string) {}
-  validate(): void {}
+class CreateUserCommand extends Command {
+  constructor(public readonly name: string) {
+    super();
+    this.validate();
+  }
+  protected validate(): void {}
 }
 
 class CreateUserHandler implements CommandHandler<CreateUserCommand> {

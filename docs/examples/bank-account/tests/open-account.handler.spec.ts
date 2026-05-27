@@ -3,7 +3,6 @@ import {
   DomainEventBusPublisher,
   DomainEventPublishingRepository,
   RegistryCommandBus,
-  ValidationCommandBus,
   ValidationErrors,
 } from '@aseguragonzalez/ts-seedwork';
 
@@ -16,7 +15,7 @@ import { InMemoryBankAccountRepository } from '../infrastructure/in-memory-bank-
 describe('OpenAccountHandler', () => {
   let innerRepo: InMemoryBankAccountRepository;
   let published: DomainEvent[];
-  let bus: ValidationCommandBus;
+  let bus: RegistryCommandBus;
 
   beforeEach(() => {
     innerRepo = new InMemoryBankAccountRepository();
@@ -27,9 +26,8 @@ describe('OpenAccountHandler', () => {
       },
     };
     const repository = new DomainEventPublishingRepository(innerRepo, publisher);
-    const registry = new RegistryCommandBus();
-    registry.register(OpenAccountCommand, new OpenAccountHandler(repository));
-    bus = new ValidationCommandBus(registry);
+    bus = new RegistryCommandBus();
+    bus.register(OpenAccountCommand, new OpenAccountHandler(repository));
   });
 
   it('saves the new account to the repository', async () => {
@@ -49,13 +47,14 @@ describe('OpenAccountHandler', () => {
     expect(published[0]).toBeInstanceOf(AccountOpened);
   });
 
-  it('throws ValidationErrors when owner is empty', async () => {
-    await expect(bus.dispatch(new OpenAccountCommand('acc-1', '', 100, 'EUR'))).rejects.toThrow(ValidationErrors);
+  it('throws ValidationErrors when owner is empty', () => {
+    expect(() => new OpenAccountCommand('acc-1', '', 100, 'EUR')).toThrow(ValidationErrors);
   });
 
-  it('throws ValidationErrors with all details when multiple fields are invalid', async () => {
+  it('throws ValidationErrors with all details when multiple fields are invalid', () => {
+    expect.assertions(2);
     try {
-      await bus.dispatch(new OpenAccountCommand('', '', -1, ''));
+      new OpenAccountCommand('', '', -1, '');
     } catch (e) {
       expect(e).toBeInstanceOf(ValidationErrors);
       if (e instanceof ValidationErrors) {

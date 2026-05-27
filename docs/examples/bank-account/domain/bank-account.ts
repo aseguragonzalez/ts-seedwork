@@ -15,7 +15,10 @@ export class BankAccount extends AggregateRoot<BankAccountId> {
     events: ReadonlyArray<TypedDomainEvent<Record<string, unknown>>> = []
   ) {
     super(id, events);
+    this.validate();
   }
+
+  protected validate(): void {}
 
   static reconstitute(id: BankAccountId, owner: string, balance: Money): BankAccount {
     return new BankAccount(id, owner, balance);

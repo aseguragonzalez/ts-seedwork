@@ -24,9 +24,7 @@ import {
   RegistryQueryBus,
   Result,
   TransactionalCommandBus,
-  ValidationCommandBus,
   ValidationErrors,
-  ValidationQueryBus,
   ValueObject,
 } from '@src';
 
@@ -49,9 +47,7 @@ describe('main barrel exports all production classes', () => {
     expect(RegistryQueryBus).toBeDefined();
     expect(Result).toBeDefined();
     expect(TransactionalCommandBus).toBeDefined();
-    expect(ValidationCommandBus).toBeDefined();
     expect(ValidationErrors).toBeDefined();
-    expect(ValidationQueryBus).toBeDefined();
     expect(ValueObject).toBeDefined();
   });
 });

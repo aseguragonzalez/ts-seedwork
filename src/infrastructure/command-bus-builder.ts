@@ -4,7 +4,6 @@ import type { UnitOfWork } from '../domain/unit-of-work.js';
 import { DomainEventCoordinatorCommandBus } from './domain-event-coordinator-command-bus.js';
 import { RegistryCommandBus } from './registry-command-bus.js';
 import { TransactionalCommandBus } from './transactional-command-bus.js';
-import { ValidationCommandBus } from './validation-command-bus.js';
 
 export class CommandBusBuilder {
   private readonly registry = new RegistryCommandBus();
@@ -15,11 +14,6 @@ export class CommandBusBuilder {
     handler: CommandHandler<TCommand>
   ): this {
     this.registry.register(commandType, handler);
-    return this;
-  }
-
-  withValidation(): this {
-    this.steps.push(inner => new ValidationCommandBus(inner));
     return this;
   }
 

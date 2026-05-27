@@ -3,7 +3,6 @@ import {
   DomainEventBusPublisher,
   DomainEventPublishingRepository,
   RegistryCommandBus,
-  ValidationCommandBus,
   ValidationErrors,
 } from '@aseguragonzalez/ts-seedwork';
 
@@ -20,7 +19,7 @@ import { InMemoryBankAccountRepository } from '../infrastructure/in-memory-bank-
 describe('WithdrawMoneyHandler', () => {
   let innerRepo: InMemoryBankAccountRepository;
   let published: DomainEvent[];
-  let bus: ValidationCommandBus;
+  let bus: RegistryCommandBus;
 
   beforeEach(async () => {
     innerRepo = new InMemoryBankAccountRepository();
@@ -31,11 +30,10 @@ describe('WithdrawMoneyHandler', () => {
       },
     };
     const repository = new DomainEventPublishingRepository(innerRepo, publisher);
-    const registry = new RegistryCommandBus();
-    registry.register(OpenAccountCommand, new OpenAccountHandler(repository));
-    registry.register(DepositMoneyCommand, new DepositMoneyHandler(repository));
-    registry.register(WithdrawMoneyCommand, new WithdrawMoneyHandler(repository));
-    bus = new ValidationCommandBus(registry);
+    bus = new RegistryCommandBus();
+    bus.register(OpenAccountCommand, new OpenAccountHandler(repository));
+    bus.register(DepositMoneyCommand, new DepositMoneyHandler(repository));
+    bus.register(WithdrawMoneyCommand, new WithdrawMoneyHandler(repository));
     await bus.dispatch(new OpenAccountCommand('acc-1', 'Alice', 200, 'EUR'));
     published = [];
   });
@@ -69,7 +67,7 @@ describe('WithdrawMoneyHandler', () => {
     expect(result.errors[0].code).toBe('INSUFFICIENT_FUNDS');
   });
 
-  it('throws ValidationErrors when amount is not positive', async () => {
-    await expect(bus.dispatch(new WithdrawMoneyCommand('acc-1', 0, 'EUR'))).rejects.toThrow(ValidationErrors);
+  it('throws ValidationErrors when amount is not positive', () => {
+    expect(() => new WithdrawMoneyCommand('acc-1', 0, 'EUR')).toThrow(ValidationErrors);
   });
 });

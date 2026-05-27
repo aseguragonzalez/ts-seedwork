@@ -4,11 +4,13 @@ describe('ValueObject (seedwork package)', () => {
   class TestValueObject extends ValueObject {
     constructor(
       public readonly prop1: string,
-
       public readonly prop2: number
     ) {
       super();
+      this.validate();
     }
+
+    protected validate(): void {}
   }
 
   it('should consider two value objects with same properties as equal', () => {
@@ -41,7 +43,9 @@ describe('ValueObject (seedwork package)', () => {
     class Narrow extends ValueObject {
       constructor(public readonly prop1: string) {
         super();
+        this.validate();
       }
+      protected validate(): void {}
     }
     const a = new TestValueObject('foo', 1);
     const b = new Narrow('foo');
@@ -53,5 +57,36 @@ describe('ValueObject (seedwork package)', () => {
     const a = new TestValueObject('hello', 42);
 
     expect(a.toString()).toBe('TestValueObject(prop1: hello, prop2: 42)');
+  });
+
+  it('calls validate() on construction', () => {
+    class ValidatedVO extends ValueObject {
+      public validateCalled = false;
+      constructor(public readonly value: string) {
+        super();
+        this.validate();
+      }
+      protected validate(): void {
+        this.validateCalled = true;
+      }
+    }
+    const vo = new ValidatedVO('test');
+    expect(vo.validateCalled).toBe(true);
+  });
+
+  it('throws during construction if validate() throws', () => {
+    class StrictVO extends ValueObject {
+      constructor(public readonly value: string) {
+        super();
+        this.validate();
+      }
+      protected validate(): void {
+        if (!this.value) {
+          throw new Error('value required');
+        }
+      }
+    }
+    expect(() => new StrictVO('')).toThrow('value required');
+    expect(() => new StrictVO('ok')).not.toThrow();
   });
 });
