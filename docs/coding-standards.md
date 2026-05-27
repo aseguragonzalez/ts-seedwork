@@ -495,4 +495,3 @@ if (result.isFailed()) {
 | Repository impl      | driver + noun + `Repository`                      | `PostgresAccountRepository`       |
 | Domain error         | descriptive + `Exception` (extends `DomainError`) | `AccountAlreadyExistsException`   |
 | File                 | `kebab-case.ts`                                   | `open-account-command-handler.ts` |
-
