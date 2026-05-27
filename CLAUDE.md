@@ -92,9 +92,15 @@ This is a DDD seedwork library (`@aseguragonzalez/ts-seedwork`) published to npm
 
 ### validate() pattern
 
-`Entity`, `ValueObject`, `Command`, and `Query` all declare `protected abstract validate(): void`. Each concrete subclass must implement it and call `this.validate()` explicitly at the end of its own constructor, after all parameter properties are assigned:
+`Entity`, `AggregateRoot`, `ValueObject`, `Command`, and `Query` all declare `protected abstract validate(): void`. Each concrete subclass must implement it and call `this.validate()` explicitly at the end of its own constructor, after all parameter properties are assigned.
+
+The error type differs by layer:
+
+- **`Entity` / `AggregateRoot` / `ValueObject`** — throw a `DomainError` subclass for any invariant violation.
+- **`Command` / `Query`** — throw `ValidationErrors` (application layer) for invalid input.
 
 ```typescript
+// Domain layer — throws DomainError subclass
 class Money extends ValueObject {
   constructor(
     public readonly amount: number,
@@ -106,6 +112,25 @@ class Money extends ValueObject {
   protected validate(): void {
     if (this.amount < 0) {
       throw new InvalidAmountError(this.amount);
+    }
+  }
+}
+
+// Application layer — throws ValidationErrors
+class OpenAccountCommand extends Command {
+  constructor(
+    public readonly accountId: string,
+    public readonly email: string
+  ) {
+    super();
+    this.validate();
+  }
+  protected validate(): void {
+    const errors: ValidationErrorDetail[] = [];
+    if (!this.accountId) errors.push({ code: 'accountId', message: 'accountId is required' });
+    if (!this.email) errors.push({ code: 'email', message: 'email is required' });
+    if (errors.length) {
+      throw new ValidationErrors(errors);
     }
   }
 }

@@ -85,7 +85,7 @@ static reconstitute(id: BankAccountId, owner: string, balance: Money): BankAccou
 ### `ValueObject`
 
 - **Role:** Immutable object defined entirely by its attributes. Two value objects are equal when all their properties are equal.
-- **Usage:** Extend and keep all properties `readonly`. Call `super()` from your constructor, then call `this.validate()` after all properties are assigned. Implement `protected validate(): void` — throw a domain-specific error on invalid state.
+- **Usage:** Extend and keep all properties `readonly`. Call `super()` from your constructor, then call `this.validate()` after all properties are assigned. Implement `protected validate(): void` — throw a `DomainError` subclass on invalid state.
 - **Supported property types in `equals`:** primitives (`===`), nested `ValueObject` (recursive), `Date` (by timestamp), arrays of the previous types.
 - **Key methods:** `equals(other: ValueObject): boolean`, `toString(): string` (auto-generated from property names and values).
 
@@ -190,7 +190,7 @@ res.status(204).send();
 
 ### `Command` / `CommandBus` / `CommandHandler`
 
-- **`Command`** — abstract base class for command DTOs. Requires `protected abstract validate(): void` — TypeScript enforces the implementation. The subclass calls `this.validate()` at the end of its constructor, guaranteeing validation at construction time. `extends Command`, not `implements Command`.
+- **`Command`** — abstract base class for command DTOs. Requires `protected abstract validate(): void` — TypeScript enforces the implementation. The subclass calls `this.validate()` at the end of its constructor, guaranteeing validation at construction time; `validate()` must throw `ValidationErrors` on invalid input. `extends Command`, not `implements Command`.
 - **`CommandHandler<TCommand>`** — `handle(command: TCommand): Promise<void>`.
 - **`CommandBus`** — `dispatch(command: Command): Promise<Result>`. The entry point for write operations.
 - **Usage:** One command class and one handler per write use case. Commands carry intent and primitives — no domain objects at the port boundary when avoidable.
@@ -216,7 +216,7 @@ return res.json(result.value);
 
 ### `Query` / `QueryBus` / `QueryHandler`
 
-- **`Query`** — abstract base class for query DTOs. Same pattern as `Command`: requires `protected abstract validate(): void`; the subclass calls `this.validate()` at the end of its constructor. Use a no-op body when no validation is needed. `extends Query`, not `implements Query`.
+- **`Query`** — abstract base class for query DTOs. Same pattern as `Command`: requires `protected abstract validate(): void`; the subclass calls `this.validate()` at the end of its constructor; `validate()` must throw `ValidationErrors` on invalid input. Use a no-op body when no validation is needed. `extends Query`, not `implements Query`.
 - **`QueryHandler<TQuery, T>`** — `handle(query: TQuery): Promise<Maybe<T>>`.
 - **`QueryBus`** — `ask<T>(query: Query): Promise<Maybe<T>>`. Entry point for reads.
 - **Usage:** One query class and one handler per read use case. Handlers return plain projection types — never domain entities.

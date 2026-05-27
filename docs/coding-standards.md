@@ -14,7 +14,7 @@
 | Concern            | Do                                                                                                                          | Don't                       |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
 | Domain errors      | Throw `DomainError` subclasses                                                                                              | Throw `Error` directly      |
-| Validation         | `protected validate()` in `Command`/`Query`/`ValueObject`/`Entity`; call `this.validate()` at end of constructor            | Validate in handler         |
+| Validation         | `protected validate()` in all four types; throw `DomainError` subclass in domain types, `ValidationErrors` in `Command`/`Query`; call `this.validate()` at end of constructor | Validate in handler |
 | Bus stack          | `Transactional → DomainEventCoordinator → Registry`                                                                         | Skip layers                 |
 | Domain events      | Pass events array to `AggregateRoot` constructor; `DomainEventPublishingRepository` publishes via `DomainEventBusPublisher` | Call handlers directly      |
 | Integration events | Publish from `DomainEventHandler` via `IntegrationEventPublisher`                                                           | Publish from aggregate      |
@@ -31,7 +31,7 @@
 - Extend `Entity`; identity is typically a `ValueObject` subclass
 - Override `equals()` by identity only
 - No setters; mutate state only through domain methods
-- Implement `protected validate(): void`; call `this.validate()` at the end of the constructor
+- Implement `protected validate(): void`; throw a `DomainError` subclass for invalid state; call `this.validate()` at the end of the constructor
 
 ```typescript
 class Account extends Entity<AccountId> {
@@ -77,7 +77,7 @@ class Email extends ValueObject {
 - Extend `AggregateRoot`; pass domain events to the constructor — the base class stores them for `getDomainEvents()`
 - Behaviour methods return a new instance carrying the accumulated events (immutable pattern)
 - One aggregate per transaction boundary
-- Implement `protected validate(): void`; call `this.validate()` at the end of the constructor
+- Implement `protected validate(): void`; throw a `DomainError` subclass for invalid state; call `this.validate()` at the end of the constructor
 
 ```typescript
 class BankAccount extends AggregateRoot<BankAccountId> {
