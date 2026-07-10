@@ -80,7 +80,7 @@
     "vitepress-plugin-mermaid": "^2.0.17"
   },
   "overrides": {
-    "esbuild": "0.28.1"
+    "esbuild": "0.27.2"
   },
   "lint-staged": {
     "*.ts": [
