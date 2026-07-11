@@ -47,7 +47,8 @@
     "type:check": "tsc -p tsconfig.test.json --noEmit --skipLibCheck",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "check:dependabot-ignores": "node scripts/check-dependabot-ignores.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.0",
