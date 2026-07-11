@@ -12,6 +12,7 @@ updates:
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
       - dependency-name: '@commitlint/config-conventional'
+      - dependency-name: '@commitlint/cli'
     target-branch: main
 
   - package-ecosystem: github-actions
