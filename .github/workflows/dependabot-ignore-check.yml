@@ -1,0 +1,32 @@
+name: Dependabot ignore staleness check
+
+# Weekly, a few hours after dependabot's own weekly run, so a genuinely fixed
+# upstream issue gets flagged before someone re-discovers it by hand.
+on:
+  schedule:
+    - cron: '0 8 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    name: Check dependabot ignore rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check ignore rules
+        run: node scripts/check-dependabot-ignores.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
