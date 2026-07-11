@@ -24,8 +24,10 @@ const QUALITY_STEPS = [
   ['npm', ['run', 'build']],
 ];
 
+const MAX_BUFFER = 100 * 1024 * 1024;
+
 function sh(cmd, args, cwd) {
-  return execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: 'pipe' });
+  return execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: 'pipe', maxBuffer: MAX_BUFFER });
 }
 
 function readIgnoreEntries() {
@@ -51,8 +53,12 @@ function latestVersionOf(name) {
 }
 
 function parseVersion(version) {
-  const [major, minor, patch] = version.split('.').map(part => parseInt(part, 10));
-  return { major, minor, patch };
+  const match = /^(\d+)\.(\d+)\.(\d+)/.exec(version);
+  if (!match) {
+    throw new Error(`Unsupported version format: ${version}`);
+  }
+  const [, major, minor, patch] = match;
+  return { major: Number(major), minor: Number(minor), patch: Number(patch) };
 }
 
 function bumpType(current, target) {
