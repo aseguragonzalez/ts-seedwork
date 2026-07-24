@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.3.1...v1.3.2) (2026-07-24)
+
+
+### Bug Fixes
+
+* **ci:** scope quality workflow secrets to CODECOV_TOKEN only ([#67](https://github.com/aseguragonzalez/ts-seedwork/issues/67)) ([3aea422](https://github.com/aseguragonzalez/ts-seedwork/commit/3aea4228d317bb38ce17b1dcf72a0259ae19f017))
+
 ## [1.3.1](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.3.0...v1.3.1) (2026-07-24)
 
 
