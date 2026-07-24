@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.3.0...v1.3.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* **deps:** resolve high-severity npm audit findings in dev dependencies ([#69](https://github.com/aseguragonzalez/ts-seedwork/issues/69)) ([56371f0](https://github.com/aseguragonzalez/ts-seedwork/commit/56371f02d2debdb9535fb5a1ff7f6e1fd0d94716)), closes [hi#severity](https://github.com/hi/issues/severity)
+
 # [1.3.0](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.2.0...v1.3.0) (2026-05-27)
 
 
