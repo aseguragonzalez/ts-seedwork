@@ -1,0 +1,35 @@
+{
+  // $schema provides code completion hints to IDEs.
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "high": true,
+  "allowlist": [
+    {
+      // brace-expansion DoS via unbounded expansion length.
+      // The "brace-expansion": "5.0.8" override in package.json patches every
+      // resolvable copy in the tree; this allowlist entry only covers the copy
+      // bundled inside npm's own bundleDependencies (pulled in transitively via
+      // @semantic-release/npm -> npm), which top-level overrides cannot reach.
+      // No safe upgrade path exists there (npm@12 would drop compatibility with
+      // @semantic-release/npm@13). Not reachable from published dist/ or from
+      // untrusted input in our build process.
+      // https://github.com/advisories/GHSA-mh99-v99m-4gvg
+      "GHSA-mh99-v99m-4gvg": {
+        "active": true,
+        "notes": "Covers only the copy bundled inside npm's own dependencies, unreachable via overrides. Re-check at next review.",
+        "expiry": "2026-10-25",
+      },
+    },
+    {
+      // node-tar uncontrolled recursion DoS via crafted long-path tar.
+      // Transitive dependency of npm (bundled inside @semantic-release/npm).
+      // Only processes tarballs we create ourselves during release, not
+      // attacker-supplied input. No non-breaking fix available.
+      // https://github.com/advisories/GHSA-r292-9mhp-454m
+      "GHSA-r292-9mhp-454m": {
+        "active": true,
+        "notes": "No non-breaking fix available; dev-only, not exposed to untrusted tar input. Re-check at next review.",
+        "expiry": "2026-10-25",
+      },
+    },
+  ],
+}

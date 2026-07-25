@@ -1,0 +1,65 @@
+name: Audit allowlist watch
+
+# Weekly, checks whether any audit-ci.jsonc allowlist entry is no longer
+# matched by the current dependency tree (i.e. the advisory got fixed
+# upstream or the override made it moot) and opens a tracking issue so it
+# gets removed instead of lingering past its expiry unnoticed.
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    name: Check if audit-ci allowlist entries are still needed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run audit-ci and capture output
+        id: audit
+        continue-on-error: true
+        run: |
+          {
+            echo "output<<AUDIT_EOF"
+            npm run audit 2>&1 | tee /dev/stderr
+            echo "AUDIT_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open an issue if an allowlisted advisory is no longer present
+        if: contains(steps.audit.outputs.output, 'Consider not allowlisting advisory')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUDIT_OUTPUT: ${{ steps.audit.outputs.output }}
+        run: |
+          TITLE="audit-ci.jsonc allowlist entry may no longer be needed"
+          STALE=$(printf '%s\n' "$AUDIT_OUTPUT" | grep -oE 'Consider not allowlisting advisory: [A-Za-z0-9-]+' | sort -u)
+
+          {
+            echo "The weekly [Audit allowlist watch](../actions/workflows/audit-allowlist-watch.yml) run detected that one or more entries in \`audit-ci.jsonc\` are no longer matched by the current dependency tree:"
+            echo
+            printf '%s\n' "$STALE" | sed 's/^/- /'
+            echo
+            echo "Please verify with \`npm run audit\`, and if confirmed, remove the corresponding entry from \`audit-ci.jsonc\`."
+          } > /tmp/issue-body.md
+
+          EXISTING=$(gh issue list --search "$TITLE in:title" --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            gh issue edit "$EXISTING" --body-file /tmp/issue-body.md
+          else
+            gh issue create --title "$TITLE" --body-file /tmp/issue-body.md --label dependencies
+          fi
