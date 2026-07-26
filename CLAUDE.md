@@ -58,6 +58,10 @@ The CI diffs `dist/*.d.ts` against `main`. If the public API changed, the PR tit
 
 To publish a testable build from a PR branch: GitHub Actions → **Pre-release** → Run workflow → select branch → enter `pr-{number}` as identifier. Pre-release versions are kept permanently on the registry.
 
+## Dependency security exceptions
+
+This repo has three mechanisms for consciously accepting a dependency-security tradeoff it can't fix immediately — `package.json` `overrides`, `.github/dependabot.yml` `ignore` rules, and the `audit-ci.jsonc` `allowlist` — each watched by its own weekly staleness-check workflow. Before adding an override, an ignore rule, or an allowlist entry (or silencing an `npm audit` failure some other way), read `.github/SECURITY_EXCEPTIONS.md` for which mechanism fits and what to verify before removing one.
+
 ## Architecture
 
 This is a DDD seedwork library (`@aseguragonzalez/ts-seedwork`) published to npm. It provides base classes and interfaces for building domain-driven TypeScript applications using CQRS.
