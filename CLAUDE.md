@@ -64,7 +64,7 @@ This repo has three mechanisms for consciously accepting a dependency-security t
 
 ## Architecture
 
-This is a DDD seedwork library (`@aseguragonzalez/ts-seedwork`) published to npm and GitHub Packages. It provides base classes and interfaces for building domain-driven TypeScript applications using CQRS.
+This is a DDD seedwork library (`@aseguragonzalez/ts-seedwork`) published to npm. It provides base classes and interfaces for building domain-driven TypeScript applications using CQRS.
 
 ### Layer structure
 
