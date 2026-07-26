@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: write
-  packages: write
   issues: write
   pull-requests: write
 
@@ -27,7 +26,6 @@ jobs:
       issues: write
       pull-requests: write
       id-token: write
-      packages: write
     steps:
       - name: Generate app token
         id: app-token
@@ -69,23 +67,3 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-
-      - name: Set up Node.js for GitHub Packages
-        if: steps.release.outputs.new_release_published == 'true'
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: 22
-          registry-url: https://npm.pkg.github.com
-          scope: '@aseguragonzalez'
-
-      - name: Publish to GitHub Packages
-        if: steps.release.outputs.new_release_published == 'true'
-        run: |
-          VERSION="${{ steps.release.outputs.new_release_version }}"
-          if npm view "@aseguragonzalez/ts-seedwork@${VERSION}" --registry=https://npm.pkg.github.com > /dev/null 2>&1; then
-            echo "Version ${VERSION} already published to GitHub Packages, skipping."
-          else
-            npm publish
-          fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

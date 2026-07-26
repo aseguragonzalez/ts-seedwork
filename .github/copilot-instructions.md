@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions
 
-This is `@aseguragonzalez/ts-seedwork` — a zero-dependency DDD/CQRS seedwork library for TypeScript/Node. It provides base classes and interfaces for domain, application, and infrastructure layers. Published to npm and GitHub Packages.
+This is `@aseguragonzalez/ts-seedwork` — a zero-dependency DDD/CQRS seedwork library for TypeScript/Node. It provides base classes and interfaces for domain, application, and infrastructure layers. Published to npm.
 
 ---
 
