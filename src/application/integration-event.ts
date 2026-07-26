@@ -1,16 +1,18 @@
-export interface IntegrationEvent {
+export interface IntegrationEvent<TPayload extends Record<string, unknown> = Record<string, unknown>> {
   readonly id: string;
   readonly type: string;
   readonly version: string;
   readonly occurredAt: Date;
   readonly aggregateId: string;
-  readonly payload: Record<string, unknown>;
+  readonly payload: TPayload;
   readonly correlationId: string;
   readonly causationId?: string;
   readonly metadata?: Record<string, string>;
 }
 
-export abstract class BaseIntegrationEvent implements IntegrationEvent {
+export abstract class BaseIntegrationEvent<
+  TPayload extends Record<string, unknown> = Record<string, unknown>,
+> implements IntegrationEvent<TPayload> {
   readonly id: string;
   readonly occurredAt: Date;
 
@@ -18,7 +20,7 @@ export abstract class BaseIntegrationEvent implements IntegrationEvent {
     public readonly type: string,
     public readonly version: string,
     public readonly aggregateId: string,
-    public readonly payload: Record<string, unknown>,
+    public readonly payload: TPayload,
     public readonly correlationId: string,
     public readonly causationId?: string,
     public readonly metadata?: Record<string, string>,
