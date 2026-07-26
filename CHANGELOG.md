@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.4.0...v1.5.0) (2026-07-26)
+
+
+### Features
+
+* add typed payload generic to IntegrationEvent ([#86](https://github.com/aseguragonzalez/ts-seedwork/issues/86)) ([681edaa](https://github.com/aseguragonzalez/ts-seedwork/commit/681edaadd13840f49a6f21540acf1df7e6eb5a43))
+
 # [1.4.0](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.3.2...v1.4.0) (2026-07-26)
 
 
