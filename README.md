@@ -24,20 +24,6 @@ Provides base classes and interfaces for the domain, application, and infrastruc
 npm install @aseguragonzalez/ts-seedwork
 ```
 
-### From GitHub Packages
-
-Add a `.npmrc` to your project:
-
-```text
-@aseguragonzalez:registry=https://npm.pkg.github.com
-```
-
-Then authenticate with a personal access token with `read:packages` and install:
-
-```bash
-npm install @aseguragonzalez/ts-seedwork
-```
-
 ### Pre-release versions
 
 Pre-release builds are published from pull request branches for integration testing. Install by tag:
