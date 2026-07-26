@@ -239,6 +239,32 @@ return res.json(result.value);
 
 ---
 
+### `IntegrationEvent` / `BaseIntegrationEvent` / `IntegrationEventPublisher` / `IntegrationEventHandler`
+
+- **`IntegrationEvent<TPayload>`** — outbound event contract crossing process/service boundaries: `{ readonly id: string; readonly type: string; readonly version: string; readonly occurredAt: Date; readonly aggregateId: string; readonly payload: TPayload; readonly correlationId: string; readonly causationId?: string; readonly metadata?: Record<string, string> }`. `TPayload` is bounded by `Record<string, unknown>` and **defaults to `Record<string, unknown>`** — referencing bare `IntegrationEvent` (no type argument) behaves exactly as before this generic was added, so existing code keeps compiling unchanged.
+- **`BaseIntegrationEvent<TPayload>`** — abstract class implementing `IntegrationEvent<TPayload>`. Constructor: `(type: string, version: string, aggregateId: string, payload: TPayload, correlationId: string, causationId?: string, metadata?: Record<string, string>, id?: string, occurredAt?: Date)` — `id` defaults to `crypto.randomUUID()`, `occurredAt` defaults to `new Date()`. Same default-type-argument behavior as `IntegrationEvent` — `extends BaseIntegrationEvent` without a type argument is unchanged from before.
+- **`IntegrationEventPublisher`** — outbound port: `publish(events: ReadonlyArray<IntegrationEvent>): Promise<void>`.
+- **`IntegrationEventHandler<TEvent>`** — inbound port: `handle(event: TEvent): Promise<void>`.
+- **Usage:** Extend `BaseIntegrationEvent<TPayload>` per integration event type with a typed payload alias to get compile-time typed access to `payload` in handlers, without a manual cast. Keep payload serializable (primitives only) — integration events cross process boundaries.
+
+```typescript
+type OrderCreatedPayload = { orderId: string; total: number };
+
+class OrderCreated extends BaseIntegrationEvent<OrderCreatedPayload> {
+  constructor(aggregateId: string, payload: OrderCreatedPayload, correlationId: string) {
+    super('orders.order.created', '1.0', aggregateId, payload, correlationId);
+  }
+}
+
+class OrderCreatedHandler implements IntegrationEventHandler<OrderCreated> {
+  async handle(event: OrderCreated): Promise<void> {
+    // event.payload.total is typed as number — no cast needed
+  }
+}
+```
+
+---
+
 ### `BackgroundTask` / `BaseBackgroundTask` / `TaskScheduler` / `TaskHandler`
 
 - **`BackgroundTask<TPayload>`** — interface: `{ readonly id: string; readonly type: string; readonly payload: TPayload; readonly correlationId: string; readonly causationId?: string; readonly metadata?: Record<string, string> }`. `TPayload` is bounded by `Record<string, unknown>` and **defaults to `Record<string, unknown>`**, so existing code using bare `BackgroundTask` (or `extends BaseBackgroundTask`) keeps compiling unchanged — unlike `TypedDomainEvent`, this generic is optional.
