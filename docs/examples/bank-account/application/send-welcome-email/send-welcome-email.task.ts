@@ -3,12 +3,12 @@ import { BaseBackgroundTask } from '@aseguragonzalez/ts-seedwork';
 import { AccountOpened } from '../../domain/events/account-opened.js';
 import { correlationContext } from '../correlation-context.js';
 
-type SendWelcomeEmailPayload = {
+export type SendWelcomeEmailPayload = {
   accountId: string;
   owner: string;
 };
 
-export class SendWelcomeEmailTask extends BaseBackgroundTask {
+export class SendWelcomeEmailTask extends BaseBackgroundTask<SendWelcomeEmailPayload> {
   static readonly TYPE = 'send-welcome-email';
 
   static create(event: AccountOpened): SendWelcomeEmailTask {
