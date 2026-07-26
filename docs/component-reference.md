@@ -265,6 +265,32 @@ class OrderCreatedHandler implements IntegrationEventHandler<OrderCreated> {
 
 ---
 
+### `BackgroundTask` / `BaseBackgroundTask` / `TaskScheduler` / `TaskHandler`
+
+- **`BackgroundTask<TPayload>`** — interface: `{ readonly id: string; readonly type: string; readonly payload: TPayload; readonly correlationId: string; readonly causationId?: string; readonly metadata?: Record<string, string> }`. `TPayload` is bounded by `Record<string, unknown>` and **defaults to `Record<string, unknown>`**, so existing code using bare `BackgroundTask` (or `extends BaseBackgroundTask`) keeps compiling unchanged — unlike `TypedDomainEvent`, this generic is optional.
+- **`BaseBackgroundTask<TPayload>`** — abstract class implementing `BackgroundTask<TPayload>`. Constructor: `(type: string, payload: TPayload, correlationId: string, causationId?: string, metadata?: Record<string, string>, id?: string)` — `id` defaults to `crypto.randomUUID()`.
+- **`TaskScheduler`** — outbound port: `schedule(task: BackgroundTask): Promise<void>`. Injected wherever a use case needs to enqueue background work.
+- **`TaskHandler<T>`** — inbound port: `handle(task: T): Promise<void>`. Implemented per task type by the worker/consumer side.
+- **Usage:** Extend `BaseBackgroundTask<TPayload>` per task type with a typed payload alias to get compile-time typed access to `payload` in `TaskHandler.handle()` — no manual cast needed. Omit the type argument (`extends BaseBackgroundTask`) when a task has no payload shape worth naming; it behaves exactly as before this generic was added.
+
+```typescript
+type SendWelcomeEmailPayload = { accountId: string; owner: string };
+
+class SendWelcomeEmailTask extends BaseBackgroundTask<SendWelcomeEmailPayload> {
+  constructor(payload: SendWelcomeEmailPayload, correlationId: string) {
+    super('send-welcome-email', payload, correlationId);
+  }
+}
+
+class SendWelcomeEmailHandler implements TaskHandler<SendWelcomeEmailTask> {
+  async handle(task: SendWelcomeEmailTask): Promise<void> {
+    // task.payload.owner is typed as `string` — no cast required.
+  }
+}
+```
+
+---
+
 ## Infrastructure layer
 
 ### `RegistryCommandBus`

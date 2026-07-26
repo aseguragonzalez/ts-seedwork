@@ -6,6 +6,14 @@ class SendEmailTask extends BaseBackgroundTask {
   }
 }
 
+type SendInvoiceEmailPayload = { to: string; invoiceId: string };
+
+class SendInvoiceEmailTask extends BaseBackgroundTask<SendInvoiceEmailPayload> {
+  constructor(correlationId: string) {
+    super('send-invoice-email', { to: 'billing@example.com', invoiceId: 'inv-1' }, correlationId);
+  }
+}
+
 describe('BaseBackgroundTask', () => {
   it('assigns a random id when none is provided', () => {
     const task = new SendEmailTask('corr-1');
@@ -43,5 +51,17 @@ describe('BaseBackgroundTask', () => {
   it('assigns metadata when provided', () => {
     const task = new SendEmailTask('corr-1', undefined, { priority: 'high', source: 'api' });
     expect(task.metadata).toEqual({ priority: 'high', source: 'api' });
+  });
+});
+
+describe('BaseBackgroundTask (typed payload)', () => {
+  it('exposes a compile-time typed payload without requiring a cast', () => {
+    const task = new SendInvoiceEmailTask('corr-1');
+    expect(task.payload).toEqual({ to: 'billing@example.com', invoiceId: 'inv-1' });
+    // No cast needed: TypeScript infers `payload` as `SendInvoiceEmailPayload`. Assigning to
+    // `string` (rather than just reading the property) forces a compile error if the generic
+    // typing regresses back to `Record<string, unknown>` (whose values are `unknown`).
+    const invoiceId: string = task.payload.invoiceId;
+    expect(invoiceId).toBe('inv-1');
   });
 });

@@ -1,17 +1,19 @@
-export interface BackgroundTask {
+export interface BackgroundTask<TPayload extends Record<string, unknown> = Record<string, unknown>> {
   readonly id: string;
   readonly type: string;
-  readonly payload: Record<string, unknown>;
+  readonly payload: TPayload;
   readonly correlationId: string;
   readonly causationId?: string;
   readonly metadata?: Record<string, string>;
 }
 
-export abstract class BaseBackgroundTask implements BackgroundTask {
+export abstract class BaseBackgroundTask<
+  TPayload extends Record<string, unknown> = Record<string, unknown>,
+> implements BackgroundTask<TPayload> {
   readonly id: string;
   protected constructor(
     public readonly type: string,
-    public readonly payload: Record<string, unknown>,
+    public readonly payload: TPayload,
     public readonly correlationId: string,
     public readonly causationId?: string,
     public readonly metadata?: Record<string, string>,
