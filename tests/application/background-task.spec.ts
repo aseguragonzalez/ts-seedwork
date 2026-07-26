@@ -58,7 +58,10 @@ describe('BaseBackgroundTask (typed payload)', () => {
   it('exposes a compile-time typed payload without requiring a cast', () => {
     const task = new SendInvoiceEmailTask('corr-1');
     expect(task.payload).toEqual({ to: 'billing@example.com', invoiceId: 'inv-1' });
-    // No cast needed: TypeScript infers `payload` as `SendInvoiceEmailPayload`.
-    expect(task.payload.invoiceId).toBe('inv-1');
+    // No cast needed: TypeScript infers `payload` as `SendInvoiceEmailPayload`. Assigning to
+    // `string` (rather than just reading the property) forces a compile error if the generic
+    // typing regresses back to `Record<string, unknown>` (whose values are `unknown`).
+    const invoiceId: string = task.payload.invoiceId;
+    expect(invoiceId).toBe('inv-1');
   });
 });

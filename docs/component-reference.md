@@ -248,7 +248,7 @@ return res.json(result.value);
 - **Usage:** Extend `BaseBackgroundTask<TPayload>` per task type with a typed payload alias to get compile-time typed access to `payload` in `TaskHandler.handle()` — no manual cast needed. Omit the type argument (`extends BaseBackgroundTask`) when a task has no payload shape worth naming; it behaves exactly as before this generic was added.
 
 ```typescript
-type SendWelcomeEmailPayload = { accountId: string; email: string };
+type SendWelcomeEmailPayload = { accountId: string; owner: string };
 
 class SendWelcomeEmailTask extends BaseBackgroundTask<SendWelcomeEmailPayload> {
   constructor(payload: SendWelcomeEmailPayload, correlationId: string) {
@@ -258,7 +258,7 @@ class SendWelcomeEmailTask extends BaseBackgroundTask<SendWelcomeEmailPayload> {
 
 class SendWelcomeEmailHandler implements TaskHandler<SendWelcomeEmailTask> {
   async handle(task: SendWelcomeEmailTask): Promise<void> {
-    // task.payload.email is typed as `string` — no cast required.
+    // task.payload.owner is typed as `string` — no cast required.
   }
 }
 ```
