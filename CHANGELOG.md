@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.3.2...v1.4.0) (2026-07-26)
+
+
+### Features
+
+* add typed payload generic to BackgroundTask ([#87](https://github.com/aseguragonzalez/ts-seedwork/issues/87)) ([9884978](https://github.com/aseguragonzalez/ts-seedwork/commit/9884978d649c5f7cb84c4870a2c48743b0068799))
+
 ## [1.3.2](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.3.1...v1.3.2) (2026-07-24)
 
 
