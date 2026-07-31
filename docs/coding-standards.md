@@ -1,5 +1,7 @@
 # Coding Standards — ts-seedwork
 
+> When this document and `docs/examples/` disagree, the example is authoritative — it is compiled and tested by CI. Please open an issue so the discrepancy gets fixed.
+
 ## TypeScript Baseline
 
 - `strict: true` enabled — no implicit `any`, no loose nulls
@@ -138,7 +140,10 @@ class AccountOpened extends BaseDomainEvent<AccountOpenedPayload> {
 
 - Declared in Domain layer; no infrastructure imports
 - Extend `Repository<TId, TAggregate>`; methods are identity-based only (`findById`, `save`, `deleteById`)
-- Never add query methods (`findByEmail`, `findByStatus`) — define a read repository in the application layer
+- Never add query methods (`findByEmail`, `findByStatus`) to the domain repository — define a read repository
+  port in the application layer instead. For a trivial single-aggregate read, projecting inside the query
+  handler from the domain repository is acceptable, as `get-balance.handler.ts` does; prefer a read port as soon
+  as the read spans aggregates or needs its own projection.
 
 ```typescript
 interface AccountRepository extends Repository<AccountId, Account> {}
@@ -150,12 +155,15 @@ interface AccountRepository extends Repository<AccountId, Account> {}
 - Name describes the violated invariant, not the HTTP status
 
 ```typescript
-class AccountAlreadyExistsException extends DomainError {
+class AccountAlreadyExistsError extends DomainError {
   constructor(email: string) {
-    super(`Account with email ${email} already exists`);
+    super(`Account with email ${email} already exists`, 'ACCOUNT_ALREADY_EXISTS');
   }
 }
 ```
+
+- `DomainError`'s constructor requires a `code: string` as the second argument — it is not optional. This code
+  is part of the public contract and can reach API consumers, so pick a stable, descriptive value.
 
 ---
 
@@ -196,8 +204,12 @@ class OpenAccountCommand extends Command {
 
 - Implement `CommandHandler<TCommand>` or `QueryHandler<TQuery, TResult>`
 - Entry point method is `handle()` (not `execute()`)
-- `handle()` returns `Promise<void>` — the bus wraps the outcome in `Result`
+- `CommandHandler.handle()` returns `Promise<void>` — the bus wraps the outcome in `Result`
+- `QueryHandler.handle()` returns `Promise<Maybe<TResult>>`, not `Promise<void>` — the result type is not
+  carried by `Query`
 - One handler per command/query; no business logic outside the handler
+- `Query` is **not** generic. The result type is declared on the handler — `QueryHandler<GetBalanceQuery, BalanceData>` —
+  not on the query. `class GetBalanceQuery extends Query<BalanceData>` does not compile.
 
 ```typescript
 class OpenAccountCommandHandler implements CommandHandler<OpenAccountCommand> {
@@ -480,18 +492,23 @@ if (result.isFailed()) {
 
 ## Naming Conventions
 
-| Artifact             | Convention                                        | Example                           |
-| -------------------- | ------------------------------------------------- | --------------------------------- |
-| Entity               | `PascalCase`                                      | `Account`                         |
-| Value Object         | `PascalCase`                                      | `Email`, `AccountId`              |
-| Aggregate            | `PascalCase`                                      | `Order`                           |
-| Domain Event         | past tense `PascalCase`                           | `AccountOpened`                   |
-| Integration Event    | past tense + `IntegrationEvent` suffix            | `AccountOpenedIntegrationEvent`   |
-| Background Task      | noun + `Task` suffix                              | `SendWelcomeEmailTask`            |
-| Command              | imperative + `Command`                            | `OpenAccountCommand`              |
-| Query                | noun/adjective + `Query`                          | `FindAccountByEmailQuery`         |
-| Handler              | noun + `Handler`                                  | `OpenAccountCommandHandler`       |
-| Repository interface | noun + `Repository`                               | `AccountRepository`               |
-| Repository impl      | driver + noun + `Repository`                      | `PostgresAccountRepository`       |
-| Domain error         | descriptive + `Exception` (extends `DomainError`) | `AccountAlreadyExistsException`   |
-| File                 | `kebab-case.ts`                                   | `open-account-command-handler.ts` |
+| Artifact             | Convention                                    | Example                         |
+| -------------------- | --------------------------------------------- | ------------------------------- |
+| Entity               | `PascalCase`                                  | `Account`                       |
+| Value Object         | `PascalCase`                                  | `Email`, `AccountId`            |
+| Aggregate            | `PascalCase`                                  | `Order`                         |
+| Domain Event         | past tense `PascalCase`                       | `AccountOpened`                 |
+| Integration Event    | past tense + `IntegrationEvent` suffix        | `AccountOpenedIntegrationEvent` |
+| Background Task      | noun + `Task` suffix                          | `SendWelcomeEmailTask`          |
+| Command              | imperative + `Command`                        | `OpenAccountCommand`            |
+| Query                | noun/adjective + `Query`                      | `FindAccountByEmailQuery`       |
+| Command handler      | imperative + `Handler`                        | `OpenAccountHandler`            |
+| Query handler        | noun phrase + `Handler`                       | `GetBalanceHandler`             |
+| Repository interface | noun + `Repository`                           | `AccountRepository`             |
+| Repository impl      | driver + noun + `Repository`                  | `PostgresAccountRepository`     |
+| Domain error         | descriptive + `Error` (extends `DomainError`) | `AccountAlreadyExistsError`     |
+| File                 | `kebab-case` + dotted role suffix             | `open-account.handler.ts`       |
+
+Role suffixes in use: `.command.ts`, `.handler.ts`, `.query.ts`, `.response.ts`, `.repository.ts`,
+`.integration-event.ts`, `.domain-event-handler.ts`, `.task.ts`, `.task-handler.ts`. Domain events and value
+objects carry no suffix. Every internal import needs a `.js` extension, even when the target is a `.ts` file.
