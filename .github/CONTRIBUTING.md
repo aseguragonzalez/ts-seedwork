@@ -60,6 +60,9 @@ Open the repository in VS Code and choose **Reopen in Container** when prompted.
 
 Run the full quality gate before submitting a pull request.
 
+All documentation and GitHub artifacts — issues, pull requests, commit messages, code
+comments — must be written in English, regardless of the language used elsewhere.
+
 ---
 
 ## Architecture and design principles
@@ -145,11 +148,14 @@ When adding a new component, add a test file at the matching path. When fixing a
 
 ## Pull request process
 
-1. Fork the repository and create a branch from `main`.
-2. Make your changes, keeping commits focused and atomic.
-3. Run the full quality gate and ensure all checks pass.
-4. Open a pull request against `main`. Set the **PR title** in Conventional Commits format — the CI validates it automatically (see [PR title and commit style](#pr-title-and-commit-style)).
-5. A review from [@aseguragonzalez](https://github.com/aseguragonzalez) is required before merging.
+1. Start from a GitHub issue: every pull request must reference an existing issue (e.g.
+   `Closes #123`) describing the problem or request it addresses. Open one first if none
+   exists.
+2. Fork the repository and create a branch from `main`.
+3. Make your changes, keeping commits focused and atomic.
+4. Run the full quality gate and ensure all checks pass.
+5. Open a pull request against `main`. Set the **PR title** in Conventional Commits format — the CI validates it automatically (see [PR title and commit style](#pr-title-and-commit-style)). Fill in the PR template's What/Why/How/How to test sections directly and concisely — do not include narrative about how the change was investigated or discussed.
+6. A review from [@aseguragonzalez](https://github.com/aseguragonzalez) is required before merging.
 
 Pull requests that change the public API should include an update to [docs/component-reference.md](../docs/component-reference.md).
 
