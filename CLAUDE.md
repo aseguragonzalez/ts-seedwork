@@ -64,6 +64,10 @@ Additional rules that apply throughout:
 
 ## Commands
 
+Run each of these inside the devcontainer — prefix with `devcontainer exec
+--workspace-folder .` (e.g. `devcontainer exec --workspace-folder . npm run lint`) unless
+you're already inside its terminal. See the devcontainer note above.
+
 ```bash
 npm ci                   # install deps + set up husky pre-commit hooks
 npm run lint             # ESLint
