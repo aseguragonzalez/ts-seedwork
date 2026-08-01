@@ -19,29 +19,28 @@ Thanks for your interest in contributing. This guide covers everything you need 
 
 ## Prerequisites
 
-- Node.js 22+
-- npm
-- Docker (optional, for devcontainer)
+- Docker and the [Dev Containers CLI](https://github.com/devcontainers/cli) (`npm install -g @devcontainers/cli`) — all commands in this document run inside the devcontainer, which matches CI's Node/npm versions exactly. No local Node.js or npm install is required.
+- [GitHub CLI](https://cli.github.com/) (`gh`), authenticated as yourself (`gh auth login`) — issues and pull requests are created and managed with `gh`, not the web UI. `gh` runs on the host, not inside the devcontainer.
 
 ---
 
 ## Development environment
 
-### Option 1 — Local
-
 ```bash
 git clone https://github.com/aseguragonzalez/ts-seedwork.git
 cd ts-seedwork
-npm ci          # installs deps and sets up git pre-commit hooks via husky
+devcontainer up --workspace-folder .
 ```
 
-### Option 2 — Devcontainer (VS Code / Cursor)
+This builds the container and runs `npm ci` (via `postCreateCommand`), which also sets up the git pre-commit hooks via husky.
 
-Open the repository in VS Code and choose **Reopen in Container** when prompted. The container starts, `npm ci` runs automatically, and husky installs the pre-commit hooks. Use npm scripts inside the integrated terminal — no host setup needed.
+Alternatively, open the repository in VS Code and choose **Reopen in Container** when prompted — it uses the same `.devcontainer/devcontainer.json` and reaches the same state.
 
 ---
 
 ## Command reference
+
+Run any command inside the devcontainer with `devcontainer exec --workspace-folder . <command>`, e.g. `devcontainer exec --workspace-folder . npm run lint`:
 
 | Task              | Command                                                                               |
 | ----------------- | ------------------------------------------------------------------------------------- |
@@ -58,7 +57,7 @@ Open the repository in VS Code and choose **Reopen in Container** when prompted.
 | Build             | `npm run build`                                                                       |
 | Clean dist        | `npm run clean`                                                                       |
 
-Run the full quality gate before submitting a pull request.
+Run the full quality gate before submitting a pull request. (If you're already in a VS Code devcontainer terminal, drop the `devcontainer exec --workspace-folder .` prefix — you're already inside it.)
 
 All documentation and GitHub artifacts — issues, pull requests, commit messages, code
 comments — must be written in English, regardless of the language used elsewhere.

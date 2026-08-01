@@ -2,6 +2,29 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+DDD seedwork building blocks for TypeScript. **This is a library of abstractions, not an
+application.** Every class is imported/subclassed/composed by downstream projects —
+design decisions here are public contracts.
+
+**All work happens inside the devcontainer.** Every command in this document assumes it
+runs there, so tool versions match CI exactly. Start it once with:
+
+```bash
+devcontainer up --workspace-folder .
+```
+
+Then run any `npm` script via:
+
+```bash
+devcontainer exec --workspace-folder . npm run <script>
+```
+
+(The host also happens to have Node/npm available in this environment, but don't rely on
+that — the devcontainer is the source of truth for versions, and other environments
+running this repo may not have a usable host toolchain at all. `gh` is the one exception:
+it always runs on the host, never inside the devcontainer — see
+`.claude/skills/gh-workflow/SKILL.md`.)
+
 ## Workflow
 
 Every change goes through three stages — never skip straight to code:
@@ -244,8 +267,10 @@ Skills under `.claude/skills/`:
 - **`bug-triage`** — the analyze → confirm → issue flow for bug reports.
 
 `.claude/settings.json` (committed, shared across contributors) holds a conservative,
-mostly-read-only permissions allowlist for these workflows: `npm ci`/`npm run
-lint|format:check|type:check|test*|build|clean`, `git status/diff/log/show/branch`, and
-read-only `gh`. It deliberately excludes `git commit`/`push` and `gh issue`/`pr create`,
-which always prompt. Personal or exploratory permissions belong in each contributor's own
-`.claude/settings.local.json` instead.
+mostly-read-only permissions allowlist for these workflows: `devcontainer up`/`devcontainer
+exec ... npm *`, plus bare `npm ci`/`npm run lint|format:check|type:check|test*|build|clean`
+for environments where the devcontainer itself can't be built (e.g. no network to fetch its
+image/features) but the host already has a working Node toolchain, `git
+status/diff/log/show/branch`, and read-only `gh`. It deliberately excludes `git
+commit`/`push` and `gh issue`/`pr create`, which always prompt. Personal or exploratory
+permissions belong in each contributor's own `.claude/settings.local.json` instead.

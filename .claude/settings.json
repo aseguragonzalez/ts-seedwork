@@ -1,6 +1,9 @@
 {
   "permissions": {
     "allow": [
+      "Bash(devcontainer up --workspace-folder .)",
+      "Bash(devcontainer exec --workspace-folder . npm *)",
+      "Bash(devcontainer exec --workspace-folder . npx jest*)",
       "Bash(npm ci)",
       "Bash(npm run lint)",
       "Bash(npm run format:check)",
