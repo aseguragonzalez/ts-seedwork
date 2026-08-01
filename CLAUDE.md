@@ -2,7 +2,71 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+DDD seedwork building blocks for TypeScript. **This is a library of abstractions, not an
+application.** Every class is imported/subclassed/composed by downstream projects —
+design decisions here are public contracts.
+
+**All work happens inside the devcontainer.** Every command in this document assumes it
+runs there, so tool versions match CI exactly. Start it once with:
+
+```bash
+devcontainer up --workspace-folder .
+```
+
+Then run any `npm` script via:
+
+```bash
+devcontainer exec --workspace-folder . npm run <script>
+```
+
+(The host also happens to have Node/npm available in this environment, but don't rely on
+that — the devcontainer is the source of truth for versions, and other environments
+running this repo may not have a usable host toolchain at all. `gh` is the one exception:
+it always runs on the host, never inside the devcontainer — see
+`.claude/skills/gh-workflow/SKILL.md`.)
+
+## Workflow
+
+Every change goes through three stages — never skip straight to code:
+
+1. **Analyze and open the issue(s).** Understand the request, confirm the understanding
+   with the requester, then open (or confirm) a GitHub issue with clear, testable
+   acceptance criteria. A request that bundles unrelated concerns splits into more than
+   one issue — one per independently shippable concern — rather than one issue standing in
+   for all of them. No PR without at least one linked issue (`Closes #N` or `Relates to
+#N` — see `.claude/skills/gh-workflow/SKILL.md`).
+2. **Plan before implementing.** Re-read the issue and draft an implementation plan that
+   separates **code**, **tests**, and **documentation** as independent tracks built
+   against the same agreed contracts (interfaces/type signatures decided up front), so the
+   tracks don't conflict with each other. A large or naturally incremental issue may be
+   delivered through more than one PR; decide this up front rather than mid-implementation.
+3. **Implement in parallel.** Execute the plan using parallel agents for code, tests, and
+   documentation (see `.claude/agents/`) against the contracts fixed in step 2. Subagents
+   don't share context with the main conversation or each other — include the fixed
+   contract explicitly in every agent's prompt, don't assume they can infer it from one
+   another's work.
+
+Additional rules that apply throughout:
+
+- All documentation and GitHub artifacts — issues, PRs, commit messages, code comments —
+  are written in English, regardless of the language used in conversation, and are
+  **direct and concise**: state the what/why/how, never the conversation or reasoning
+  process that led to it. No narrative, no TL;DR filler.
+- While analyzing any request, check whether nearby code could be improved. If so, do not
+  bundle the improvement into the current change — open a separate issue for it (see the
+  `boy-scout` skill).
+- For bug reports, analyze the problem and propose a solution before opening an issue for
+  it (see the `bug-triage` skill).
+- PR review comments (yours or a bot reviewer's) are answered in English, as a reply in
+  the same review-comment thread — never a new top-level PR comment.
+- See `.claude/skills/gh-workflow/SKILL.md` for label taxonomy, identity, reviewer, and
+  issue/PR mechanics.
+
 ## Commands
+
+Run each of these inside the devcontainer — prefix with `devcontainer exec
+--workspace-folder .` (e.g. `devcontainer exec --workspace-folder . npm run lint`) unless
+you're already inside its terminal. See the devcontainer note above.
 
 ```bash
 npm ci                   # install deps + set up husky pre-commit hooks
@@ -53,6 +117,25 @@ The CI diffs `dist/*.d.ts` against `main`. If the public API changed, the PR tit
 | -------------------------------------------- | --------------------- |
 | New export, added optional property/param    | `feat:`               |
 | Removed export, changed or removed signature | `feat!:`              |
+
+### Commit and PR conventions
+
+The type **must match the layer actually changed**, not just be "valid" Conventional
+Commits — a mismatch either ships a spurious release or silently swallows one that should
+have shipped:
+
+- `fix:` / `feat:` / `feat!:` — only when `src/` behavior changed (see the version-bump
+  and API-surface tables above).
+- `docs:` — changes limited to `docs/`, `README.md`, or `CLAUDE.md`.
+- `ci:` — `.github/workflows/` or other pipeline-only changes.
+- `chore:` / `build:` — tooling, `package.json` build config, `.claude/` scaffolding,
+  dependency bumps with no behavior change.
+- `refactor:` — no behavior or public-API change; must never trigger a release.
+- `test:` — test-only changes.
+
+See `.claude/skills/gh-workflow/SKILL.md` for the full commit-type-to-release-impact
+table (including the `.releaserc.json` `fix(deps)`/`fix(deps-dev)` non-releasing rules),
+label taxonomy, identity split, reviewer rules, and PR release-readiness checks.
 
 ### Pre-release workflow
 
@@ -166,3 +249,32 @@ Reference example: `docs/examples/bank-account/` — complete BankAccount exampl
 - Path alias `@src` maps to `src/` in tests (via `moduleNameMapper` in `jest.config.ts` and `tsconfig.test.json`); use `@src` for barrel imports and `@src/domain/...` etc. for sub-module imports
 - Tests live in `tests/` mirroring `src/` structure; transpiled by `@swc/jest` (no tsc during test runs)
 - `tsconfig.build.json` emits to `dist/`; `tsconfig.test.json` is used by the type-check step for test files
+
+## Claude Code agents and skills for this repo
+
+Agents under `.claude/agents/` implement the parallel code/test/docs tracks from
+"Workflow" above, plus two cross-cutting agents:
+
+- **`ts-implementer`** — the `src/` track, against a fixed contract.
+- **`ts-test-writer`** — the `tests/` track, against the same contract.
+- **`docs-aligner`** — the `docs/` track, against the same contract.
+- **`boy-scout`** — finds and either executes or files refactoring opportunities.
+- **`bug-analyst`** — investigates a reported defect and proposes a fix before any issue
+  is opened.
+
+Skills under `.claude/skills/`:
+
+- **`gh-workflow`** — the full issue-first workflow: identity, label taxonomy, reviewer,
+  commit-type table, and PR release-readiness checks.
+- **`boy-scout`** — when/how to apply the boy-scout rule (execute inline vs. separate
+  issue).
+- **`bug-triage`** — the analyze → confirm → issue flow for bug reports.
+
+`.claude/settings.json` (committed, shared across contributors) holds a conservative,
+mostly-read-only permissions allowlist for these workflows: `devcontainer up`/`devcontainer
+exec ... npm *`, plus bare `npm ci`/`npm run lint|format:check|type:check|test*|build|clean`
+for environments where the devcontainer itself can't be built (e.g. no network to fetch its
+image/features) but the host already has a working Node toolchain, `git
+status/diff/log/show/branch`, and read-only `gh`. It deliberately excludes `git
+commit`/`push` and `gh issue`/`pr create`, which always prompt. Personal or exploratory
+permissions belong in each contributor's own `.claude/settings.local.json` instead.
