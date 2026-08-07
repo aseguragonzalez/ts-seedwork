@@ -5,17 +5,46 @@
   "allowlist": [
     {
       // brace-expansion DoS via unbounded expansion length.
-      // The "brace-expansion": "5.0.8" override in package.json patches every
+      // The "brace-expansion": "5.0.9" override in package.json patches every
       // resolvable copy in the tree; this allowlist entry only covers the copy
       // bundled inside npm's own bundleDependencies (pulled in transitively via
       // @semantic-release/npm -> npm), which top-level overrides cannot reach.
-      // No safe upgrade path exists there (npm@12 would drop compatibility with
-      // @semantic-release/npm@13). Not reachable from published dist/ or from
+      // No safe upgrade path exists there (npm@12 still bundles the same
+      // vulnerable copy). Not reachable from published dist/ or from
       // untrusted input in our build process.
       // https://github.com/advisories/GHSA-mh99-v99m-4gvg
       "GHSA-mh99-v99m-4gvg": {
         "active": true,
         "notes": "Covers only the copy bundled inside npm's own dependencies, unreachable via overrides. Re-check at next review.",
+        "expiry": "2026-10-25",
+      },
+    },
+    {
+      // brace-expansion DoS via unbounded intermediate arrays, bypassing the
+      // GHSA-mh99-v99m-4gvg mitigation. Same unreachable npm-bundled copy as
+      // GHSA-mh99-v99m-4gvg above (confirmed npm@12.0.2 still bundles brace-
+      // expansion 5.0.7); the "brace-expansion": "5.0.9" override in
+      // package.json already patches every resolvable copy elsewhere in the
+      // tree.
+      // https://github.com/advisories/GHSA-rgw5-rvv9-x895
+      "GHSA-rgw5-rvv9-x895": {
+        "active": true,
+        "notes": "Covers only the copy bundled inside npm's own dependencies, unreachable via overrides. Re-check at next review.",
+        "expiry": "2026-10-25",
+      },
+    },
+    {
+      // ip-address: Address4 decodes leading-zero octets as decimal while
+      // resolvers decode them as octal, allowing SSRF and trust-boundary
+      // bypass. Transitive dependency of npm (bundled inside
+      // @semantic-release/npm); confirmed npm@12.0.2 still bundles a
+      // vulnerable ip-address copy, so no override or upgrade path exists.
+      // Not reachable from published dist/ or from untrusted input in our
+      // build process.
+      // https://github.com/advisories/GHSA-mwp4-54f8-5fhr
+      "GHSA-mwp4-54f8-5fhr": {
+        "active": true,
+        "notes": "No safe upgrade path (npm@12.0.2 still bundles a vulnerable copy); dev-only, not exposed to untrusted input. Re-check at next review.",
         "expiry": "2026-10-25",
       },
     },
