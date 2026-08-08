@@ -5,13 +5,13 @@
   "allowlist": [
     {
       // brace-expansion DoS via unbounded expansion length.
-      // The "brace-expansion": "5.0.9" override in package.json patches every
-      // resolvable copy in the tree; this allowlist entry only covers the copy
-      // bundled inside npm's own bundleDependencies (pulled in transitively via
-      // @semantic-release/npm -> npm), which top-level overrides cannot reach.
-      // No safe upgrade path exists there (npm@12 still bundles the same
-      // vulnerable copy). Not reachable from published dist/ or from
-      // untrusted input in our build process.
+      // Every resolvable copy elsewhere in the tree is already patched
+      // (>=2.0.2/>=1.1.12); no override is needed. This allowlist entry only
+      // covers the copy bundled inside npm's own bundleDependencies (pulled
+      // in transitively via @semantic-release/npm -> npm), which no override
+      // can reach. No safe upgrade path exists there (npm@12 still bundles
+      // the same vulnerable copy). Not reachable from published dist/ or
+      // from untrusted input in our build process.
       // https://github.com/advisories/GHSA-mh99-v99m-4gvg
       "GHSA-mh99-v99m-4gvg": {
         "active": true,
@@ -23,9 +23,8 @@
       // brace-expansion DoS via unbounded intermediate arrays, bypassing the
       // GHSA-mh99-v99m-4gvg mitigation. Same unreachable npm-bundled copy as
       // GHSA-mh99-v99m-4gvg above (confirmed npm@12.0.2 still bundles brace-
-      // expansion 5.0.7); the "brace-expansion": "5.0.9" override in
-      // package.json already patches every resolvable copy elsewhere in the
-      // tree.
+      // expansion 5.0.7); every resolvable copy elsewhere in the tree is
+      // already patched, so no override is needed.
       // https://github.com/advisories/GHSA-rgw5-rvv9-x895
       "GHSA-rgw5-rvv9-x895": {
         "active": true,
