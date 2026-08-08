@@ -3,12 +3,18 @@ name: CI
 on:
   pull_request:
     branches: [main]
+  pull_request_review:
+    types: [submitted]
 
 permissions:
   contents: read
 
 jobs:
   quality:
+    # Re-runs on review approval, not just on PR open/push, so the audit step
+    # re-checks against the live advisory database close to merge time rather
+    # than only at whatever point the PR's CI last happened to run.
+    if: github.event_name == 'pull_request' || github.event.review.state == 'approved'
     uses: ./.github/workflows/quality.yml
     permissions:
       contents: read
@@ -17,6 +23,7 @@ jobs:
 
   pr-title:
     name: PR title
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
@@ -27,6 +34,7 @@ jobs:
 
   api-diff:
     name: API surface check
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
