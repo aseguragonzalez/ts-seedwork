@@ -24,7 +24,8 @@ jobs:
   pr-title:
     name: PR title
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
       pull-requests: read
     steps:
@@ -35,7 +36,8 @@ jobs:
   api-diff:
     name: API surface check
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
       contents: read
 
