@@ -1,0 +1,33 @@
+name: Devcontainer quality
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.devcontainer/**'
+
+permissions:
+  contents: read
+
+jobs:
+  devcontainer-quality:
+    name: Lint, format, type-check, test and build (inside devcontainer)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Run quality gate inside devcontainer
+        uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca # v0.3
+        with:
+          runCmd: |
+            npm ci
+            npm run audit
+            npm run lint
+            npm run format:check
+            npm run type:check
+            npm run test:coverage
+            npm run build
