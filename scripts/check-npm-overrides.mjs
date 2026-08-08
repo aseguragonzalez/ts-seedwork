@@ -16,6 +16,7 @@ const packageJsonPath = path.join(repoRoot, 'package.json');
 
 const QUALITY_STEPS = [
   ['npm', ['install']],
+  ['npm', ['run', 'audit']],
   ['npm', ['run', 'lint']],
   ['npm', ['run', 'format:check']],
   ['npm', ['run', 'type:check']],
@@ -92,8 +93,8 @@ async function openIssue(repo, token, { dependencyName, currentOverride, latestV
   const body = [
     `Dropping the \`overrides\` entry for \`${dependencyName}\` (currently pinned to ` +
       `\`${currentOverride}\`, latest available is \`${latestVersion}\`) and running a real ` +
-      '`npm install` followed by the full quality gate (lint, format check, type check, test, ' +
-      'build) succeeded.',
+      '`npm install` followed by the full quality gate (audit, lint, format check, type check, ' +
+      'test, build) succeeded.',
     '',
     "This suggests the condition that originally justified this entry in `package.json`'s " +
       '`overrides` (regression, vulnerability, or peer conflict) may no longer apply.',
