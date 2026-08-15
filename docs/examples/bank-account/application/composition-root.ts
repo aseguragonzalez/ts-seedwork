@@ -1,6 +1,8 @@
 import {
   CommandBusBuilder,
   DeferredDomainEventBus,
+  DomainEvent,
+  DomainEventBusContext,
   DomainEventPublishingRepository,
   QueryBusBuilder,
 } from '@aseguragonzalez/ts-seedwork';
@@ -20,12 +22,23 @@ import { SendWelcomeEmailTaskHandler } from './send-welcome-email/send-welcome-e
 import { WithdrawMoneyCommand } from './withdraw-money/withdraw-money.command.js';
 import { WithdrawMoneyHandler } from './withdraw-money/withdraw-money.handler.js';
 
+// This demo runs synchronously in a single process, so a single shared buffer is enough.
+// A real app (HTTP API, Cloud Function, subscriber) must scope the buffer per request/invocation
+// instead — typically by backing DomainEventBusContext with node:async_hooks AsyncLocalStorage.
+class SingleBufferDomainEventBusContext implements DomainEventBusContext {
+  private readonly buffer = new Map<string, DomainEvent>();
+
+  current(): Map<string, DomainEvent> {
+    return this.buffer;
+  }
+}
+
 export function buildCommandBus() {
   const integrationEventPublisher = new InMemoryIntegrationEventPublisher();
   const taskScheduler = new InMemoryTaskScheduler();
   taskScheduler.register(SendWelcomeEmailTask.TYPE, new SendWelcomeEmailTaskHandler());
 
-  const domainEventBus = new DeferredDomainEventBus();
+  const domainEventBus = new DeferredDomainEventBus(new SingleBufferDomainEventBusContext());
   const bankAccountRepository = new InMemoryBankAccountRepository();
   const publishingRepository = new DomainEventPublishingRepository(bankAccountRepository, domainEventBus);
 

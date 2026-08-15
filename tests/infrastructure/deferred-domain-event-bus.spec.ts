@@ -1,5 +1,28 @@
-import { BaseDomainEvent, DeferredDomainEventBus, DomainEventHandler } from '@src';
+import { AsyncLocalStorage } from 'node:async_hooks';
+
+import { BaseDomainEvent, DeferredDomainEventBus, DomainEvent, DomainEventBusContext, DomainEventHandler } from '@src';
 import { DeferredDomainEventBusSpy } from '@src/testing/deferred-domain-event-bus-spy';
+
+const singleBufferContext = (): DomainEventBusContext => {
+  const buffer = new Map<string, DomainEvent>();
+  return { current: () => buffer };
+};
+
+class AsyncLocalDomainEventBusContext implements DomainEventBusContext {
+  private readonly storage = new AsyncLocalStorage<Map<string, DomainEvent>>();
+
+  run<T>(work: () => Promise<T>): Promise<T> {
+    return this.storage.run(new Map<string, DomainEvent>(), work);
+  }
+
+  current(): Map<string, DomainEvent> {
+    const store = this.storage.getStore();
+    if (!store) {
+      throw new Error('no scope open');
+    }
+    return store;
+  }
+}
 
 class OrderPlaced extends BaseDomainEvent<{ orderId: string }> {
   constructor(orderId: string) {
@@ -25,7 +48,7 @@ const makeHandler = <T extends { id: string; aggregateId: string; occurredAt: Da
 
 describe('DeferredDomainEventBus', () => {
   it('subscribe + publish + dispatch invokes handlers in order', async () => {
-    const bus = new DeferredDomainEventBus();
+    const bus = new DeferredDomainEventBus(singleBufferContext());
     const { handler, received } = makeHandler<OrderPlaced>();
     bus.subscribe(OrderPlaced, handler);
 
@@ -40,7 +63,7 @@ describe('DeferredDomainEventBus', () => {
   });
 
   it('dispatch with no pending events is a no-op', async () => {
-    const bus = new DeferredDomainEventBus();
+    const bus = new DeferredDomainEventBus(singleBufferContext());
     const { handler } = makeHandler<OrderPlaced>();
     bus.subscribe(OrderPlaced, handler);
 
@@ -50,7 +73,7 @@ describe('DeferredDomainEventBus', () => {
   });
 
   it('multiple handlers for the same event type are all invoked', async () => {
-    const bus = new DeferredDomainEventBus();
+    const bus = new DeferredDomainEventBus(singleBufferContext());
     const { handler: h1 } = makeHandler<OrderPlaced>();
     const { handler: h2 } = makeHandler<OrderPlaced>();
     bus.subscribe(OrderPlaced, h1);
@@ -64,14 +87,14 @@ describe('DeferredDomainEventBus', () => {
   });
 
   it('event without a subscribed handler does not throw', async () => {
-    const bus = new DeferredDomainEventBus();
+    const bus = new DeferredDomainEventBus(singleBufferContext());
 
     await bus.publish([new OrderPlaced('order-1')]);
     await expect(bus.dispatch()).resolves.toBeUndefined();
   });
 
   it('discard empties the buffer without dispatching', async () => {
-    const bus = new DeferredDomainEventBus();
+    const bus = new DeferredDomainEventBus(singleBufferContext());
     const { handler } = makeHandler<OrderPlaced>();
     bus.subscribe(OrderPlaced, handler);
 
@@ -83,7 +106,7 @@ describe('DeferredDomainEventBus', () => {
   });
 
   it('handlers for different event types are dispatched independently', async () => {
-    const bus = new DeferredDomainEventBus();
+    const bus = new DeferredDomainEventBus(singleBufferContext());
     const { handler: orderHandler, received: orderReceived } = makeHandler<OrderPlaced>();
     const { handler: paymentHandler, received: paymentReceived } = makeHandler<PaymentReceived>();
     bus.subscribe(OrderPlaced, orderHandler);
@@ -97,7 +120,7 @@ describe('DeferredDomainEventBus', () => {
   });
 
   it('publishing the same event id twice is idempotent - handler invoked once', async () => {
-    const bus = new DeferredDomainEventBus();
+    const bus = new DeferredDomainEventBus(singleBufferContext());
     const { handler } = makeHandler<OrderPlaced>();
     bus.subscribe(OrderPlaced, handler);
 
@@ -112,7 +135,7 @@ describe('DeferredDomainEventBus', () => {
 
 describe('DeferredDomainEventBusSpy', () => {
   it('pending returns buffered events before dispatch', async () => {
-    const bus = new DeferredDomainEventBusSpy();
+    const bus = new DeferredDomainEventBusSpy(singleBufferContext());
     const event1 = new OrderPlaced('order-1');
     const event2 = new OrderPlaced('order-2');
     await bus.publish([event1, event2]);
@@ -123,7 +146,7 @@ describe('DeferredDomainEventBusSpy', () => {
   });
 
   it('pending is empty after dispatch', async () => {
-    const bus = new DeferredDomainEventBusSpy();
+    const bus = new DeferredDomainEventBusSpy(singleBufferContext());
     await bus.publish([new OrderPlaced('order-1')]);
     await bus.dispatch();
 
@@ -131,7 +154,7 @@ describe('DeferredDomainEventBusSpy', () => {
   });
 
   it('pending is empty after discard', async () => {
-    const bus = new DeferredDomainEventBusSpy();
+    const bus = new DeferredDomainEventBusSpy(singleBufferContext());
     await bus.publish([new OrderPlaced('order-1')]);
     bus.discard();
 
@@ -139,7 +162,7 @@ describe('DeferredDomainEventBusSpy', () => {
   });
 
   it('reset clears pending events without dispatching', async () => {
-    const bus = new DeferredDomainEventBusSpy();
+    const bus = new DeferredDomainEventBusSpy(singleBufferContext());
     const { handler } = makeHandler<OrderPlaced>();
     bus.subscribe(OrderPlaced, handler);
     await bus.publish([new OrderPlaced('order-1')]);
@@ -150,7 +173,7 @@ describe('DeferredDomainEventBusSpy', () => {
   });
 
   it('reset clears subscribed handlers', async () => {
-    const bus = new DeferredDomainEventBusSpy();
+    const bus = new DeferredDomainEventBusSpy(singleBufferContext());
     const { handler } = makeHandler<OrderPlaced>();
     bus.subscribe(OrderPlaced, handler);
     bus.reset();
@@ -159,5 +182,27 @@ describe('DeferredDomainEventBusSpy', () => {
     await bus.dispatch();
 
     expect(handler.handle).not.toHaveBeenCalled();
+  });
+});
+
+describe('DeferredDomainEventBus concurrency (AsyncLocalStorage context)', () => {
+  it('isolates buffered events across concurrent async contexts sharing a single bus instance', async () => {
+    const context = new AsyncLocalDomainEventBusContext();
+    const bus = new DeferredDomainEventBus(context);
+    const { handler, received } = makeHandler<OrderPlaced>();
+    bus.subscribe(OrderPlaced, handler);
+
+    const runRequest = (orderId: string) =>
+      context.run(async () => {
+        await bus.publish([new OrderPlaced(orderId)]);
+        // yield to interleave with the other concurrent request before dispatching
+        await new Promise(resolve => setImmediate(resolve));
+        await bus.dispatch();
+      });
+
+    await Promise.all([runRequest('order-a'), runRequest('order-b')]);
+
+    expect(handler.handle).toHaveBeenCalledTimes(2);
+    expect(received.map(event => event.payload.orderId).sort()).toEqual(['order-a', 'order-b']);
   });
 });

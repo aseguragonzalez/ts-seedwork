@@ -1,7 +1,20 @@
-import { Command, type CommandBus, type CommandHandler, DomainError, Result } from '@src';
+import {
+  Command,
+  type CommandBus,
+  type CommandHandler,
+  DomainError,
+  type DomainEvent,
+  type DomainEventBusContext,
+  Result,
+} from '@src';
 import type { UnitOfWork } from '@src/domain/unit-of-work';
 import { CommandBusBuilder } from '@src/infrastructure/command-bus-builder';
 import { DeferredDomainEventBus } from '@src/infrastructure/deferred-domain-event-bus';
+
+const singleBufferContext = (): DomainEventBusContext => {
+  const buffer = new Map<string, DomainEvent>();
+  return { current: () => buffer };
+};
 
 class DoSomething extends Command {
   constructor() {
@@ -180,7 +193,7 @@ describe('CommandBusBuilder', () => {
   describe('withDomainEventCoordination', () => {
     it('dispatches domain events when command succeeds', async () => {
       const handler = new DoSomethingHandler();
-      const eventBus = new DeferredDomainEventBus();
+      const eventBus = new DeferredDomainEventBus(singleBufferContext());
       jest.spyOn(eventBus, 'dispatch');
       jest.spyOn(eventBus, 'discard');
       const bus = new CommandBusBuilder().register(DoSomething, handler).withDomainEventCoordination(eventBus).build();
@@ -193,7 +206,7 @@ describe('CommandBusBuilder', () => {
     });
 
     it('discards domain events when command returns DomainError', async () => {
-      const eventBus = new DeferredDomainEventBus();
+      const eventBus = new DeferredDomainEventBus(singleBufferContext());
       jest.spyOn(eventBus, 'dispatch');
       jest.spyOn(eventBus, 'discard');
       const bus = new CommandBusBuilder()
