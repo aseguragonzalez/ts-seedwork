@@ -1,3 +1,16 @@
+# [1.6.0](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.5.0...v1.6.0) (2026-08-15)
+
+
+### Bug Fixes
+
+* **deps-dev:** bump mermaid/dompurify to patched versions ([#105](https://github.com/aseguragonzalez/ts-seedwork/issues/105)) ([c151e83](https://github.com/aseguragonzalez/ts-seedwork/commit/c151e8318d246cd5a4345692c27a2dd53dbd4f7c))
+* **deps-dev:** bump transitive nanoid to patch GHSA-2v37-7h3g-55p8 ([#111](https://github.com/aseguragonzalez/ts-seedwork/issues/111)) ([7e99984](https://github.com/aseguragonzalez/ts-seedwork/commit/7e9998406dd2e6db28dcb68f0fce00e2991a1f35))
+
+
+### Features
+
+* scope DeferredDomainEventBus buffer via injected DomainEventBusContext ([#125](https://github.com/aseguragonzalez/ts-seedwork/issues/125)) ([9f0a1ca](https://github.com/aseguragonzalez/ts-seedwork/commit/9f0a1ca4f27dd42aa5a0c1366b875ab87cb21ffa))
+
 # [1.5.0](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.4.0...v1.5.0) (2026-07-26)
 
 
