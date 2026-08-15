@@ -1,4 +1,4 @@
-import { Command, type CommandBus, DomainEvent, DomainEventBusContext, Result } from '@src';
+import { Command, type CommandBus, type DomainEvent, type DomainEventBusContext, Result } from '@src';
 import { DeferredDomainEventBus } from '@src/infrastructure/deferred-domain-event-bus';
 import { DomainEventCoordinatorCommandBus } from '@src/infrastructure/domain-event-coordinator-command-bus';
 

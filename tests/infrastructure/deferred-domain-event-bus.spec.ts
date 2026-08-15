@@ -1,6 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-import { BaseDomainEvent, DeferredDomainEventBus, DomainEvent, DomainEventBusContext, DomainEventHandler } from '@src';
+import {
+  BaseDomainEvent,
+  DeferredDomainEventBus,
+  type DomainEvent,
+  type DomainEventBusContext,
+  type DomainEventHandler,
+} from '@src';
 import { DeferredDomainEventBusSpy } from '@src/testing/deferred-domain-event-bus-spy';
 
 const singleBufferContext = (): DomainEventBusContext => {
