@@ -389,7 +389,7 @@ Three interfaces serve different roles:
 | `DomainEventBusSubscriber` | Composition root — registers handlers             |
 | `DomainEventBus`           | `CommandBusBuilder.withDomainEventCoordination()` |
 
-`DeferredDomainEventBus` implements all three. Buffer is keyed by `event.id` — idempotent if the same aggregate is saved more than once in the same transaction. It does not own a buffer field itself — its constructor takes a `DomainEventBusContext` (`{ current(): Map<string, DomainEvent> }`) and every method resolves the live buffer through it, so the entry point (not this library) decides how the buffer is scoped per unit of work (see "Execution context — correlationId propagation" above for the same idiom applied to tracing).
+`DeferredDomainEventBus` implements all three. Buffer is keyed by `event.id` — idempotent if the same aggregate is saved more than once in the same transaction. It does not own a buffer field itself — its constructor takes a `DomainEventBusContext` (`{ current(): Map<string, DomainEvent> }`) and every method resolves the live buffer through it, so the entry point (not this library) decides how the buffer is scoped per unit of work (see "Execution context — correlationId propagation" above for the same idiom applied to tracing). The `context` parameter **defaults** to an internal single-buffer implementation, so `new DeferredDomainEventBus()` with no argument keeps working exactly as before this parameter was added — pass an explicit `DomainEventBusContext` (e.g. `AsyncLocalStorage`-backed) to opt into per-scope isolation under concurrency.
 
 ```typescript
 // composition root — domainEventBusContext is provided by the entry point

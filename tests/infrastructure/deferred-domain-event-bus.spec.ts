@@ -131,6 +131,19 @@ describe('DeferredDomainEventBus', () => {
 
     expect(handler.handle).toHaveBeenCalledTimes(1);
   });
+
+  it('constructing without a context argument preserves prior single-buffer behavior', async () => {
+    const bus = new DeferredDomainEventBus();
+    const { handler, received } = makeHandler<OrderPlaced>();
+    bus.subscribe(OrderPlaced, handler);
+
+    const event = new OrderPlaced('order-1');
+    await bus.publish([event]);
+    await bus.dispatch();
+
+    expect(handler.handle).toHaveBeenCalledTimes(1);
+    expect(received[0]).toBe(event);
+  });
 });
 
 describe('DeferredDomainEventBusSpy', () => {
@@ -182,6 +195,13 @@ describe('DeferredDomainEventBusSpy', () => {
     await bus.dispatch();
 
     expect(handler.handle).not.toHaveBeenCalled();
+  });
+
+  it('constructing without a context argument preserves prior single-buffer behavior', async () => {
+    const bus = new DeferredDomainEventBusSpy();
+    await bus.publish([new OrderPlaced('order-1')]);
+
+    expect(bus.pending).toHaveLength(1);
   });
 });
 

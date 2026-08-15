@@ -1,14 +1,13 @@
 import {
   CommandBusBuilder,
   DeferredDomainEventBus,
-  DomainEvent,
-  DomainEventBusContext,
   DomainEventPublishingRepository,
   QueryBusBuilder,
 } from '@aseguragonzalez/ts-seedwork';
 import { InMemoryIntegrationEventPublisher, InMemoryTaskScheduler } from '@aseguragonzalez/ts-seedwork/testing';
 
 import { AccountOpened } from '../domain/events/account-opened.js';
+import { AsyncLocalDomainEventBusContext } from '../infrastructure/async-local-domain-event-bus-context.js';
 import { InMemoryBankAccountRepository } from '../infrastructure/in-memory-bank-account.repository.js';
 import { AccountOpenedDomainEventHandler } from './account-opened.domain-event-handler.js';
 import { DepositMoneyCommand } from './deposit-money/deposit-money.command.js';
@@ -22,23 +21,17 @@ import { SendWelcomeEmailTaskHandler } from './send-welcome-email/send-welcome-e
 import { WithdrawMoneyCommand } from './withdraw-money/withdraw-money.command.js';
 import { WithdrawMoneyHandler } from './withdraw-money/withdraw-money.handler.js';
 
-// This demo runs synchronously in a single process, so a single shared buffer is enough.
-// A real app (HTTP API, Cloud Function, subscriber) must scope the buffer per request/invocation
-// instead — typically by backing DomainEventBusContext with node:async_hooks AsyncLocalStorage.
-class SingleBufferDomainEventBusContext implements DomainEventBusContext {
-  private readonly buffer = new Map<string, DomainEvent>();
-
-  current(): Map<string, DomainEvent> {
-    return this.buffer;
-  }
-}
-
 export function buildCommandBus() {
   const integrationEventPublisher = new InMemoryIntegrationEventPublisher();
   const taskScheduler = new InMemoryTaskScheduler();
   taskScheduler.register(SendWelcomeEmailTask.TYPE, new SendWelcomeEmailTaskHandler());
 
-  const domainEventBus = new DeferredDomainEventBus(new SingleBufferDomainEventBusContext());
+  // AsyncLocalDomainEventBusContext scopes the domain-event buffer per command dispatch, so a
+  // single DeferredDomainEventBus instance stays safe under concurrent dispatches. The entry
+  // point (here, the `.use(...)` step below) is responsible for opening that scope — the bus
+  // itself only ever reads whatever buffer is "current".
+  const domainEventContext = new AsyncLocalDomainEventBusContext();
+  const domainEventBus = new DeferredDomainEventBus(domainEventContext);
   const bankAccountRepository = new InMemoryBankAccountRepository();
   const publishingRepository = new DomainEventPublishingRepository(bankAccountRepository, domainEventBus);
 
@@ -51,6 +44,7 @@ export function buildCommandBus() {
     .register(OpenAccountCommand, new OpenAccountHandler(publishingRepository))
     .register(DepositMoneyCommand, new DepositMoneyHandler(publishingRepository))
     .register(WithdrawMoneyCommand, new WithdrawMoneyHandler(publishingRepository))
+    .use(inner => ({ dispatch: command => domainEventContext.run(() => inner.dispatch(command)) }))
     .withDomainEventCoordination(domainEventBus)
     .build();
 

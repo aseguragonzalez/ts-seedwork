@@ -2,10 +2,18 @@ import type { DomainEventBus, DomainEventHandler } from '../application/domain-e
 import type { DomainEventBusContext } from '../application/domain-event-bus-context.js';
 import type { DomainEvent } from '../domain/domain-event.js';
 
+class SingleBufferDomainEventBusContext implements DomainEventBusContext {
+  private readonly buffer = new Map<string, DomainEvent>();
+
+  current(): Map<string, DomainEvent> {
+    return this.buffer;
+  }
+}
+
 export class DeferredDomainEventBus implements DomainEventBus {
   protected readonly handlers = new Map<Function, DomainEventHandler<any>[]>();
 
-  constructor(protected readonly context: DomainEventBusContext) {}
+  constructor(protected readonly context: DomainEventBusContext = new SingleBufferDomainEventBusContext()) {}
 
   subscribe<TEvent extends DomainEvent>(
     eventType: Function & { prototype: TEvent },
