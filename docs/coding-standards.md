@@ -243,6 +243,8 @@ correlationStore.run(correlationId, () => next());
 
 `AsyncLocalStorage` propagates the value automatically through all async calls within the same execution context.
 
+> `DomainEventBusContext` (see "DomainEventBus Wiring" below) follows this same idiom applied to the deferred domain-event buffer instead of a correlation id — the entry point owns the scoping, and `DeferredDomainEventBus` just reads whatever buffer is "current".
+
 ---
 
 ### Integration Events
@@ -387,11 +389,12 @@ Three interfaces serve different roles:
 | `DomainEventBusSubscriber` | Composition root — registers handlers             |
 | `DomainEventBus`           | `CommandBusBuilder.withDomainEventCoordination()` |
 
-`DeferredDomainEventBus` implements all three. Buffer is keyed by `event.id` — idempotent if the same aggregate is saved more than once in the same transaction.
+`DeferredDomainEventBus` implements all three. Buffer is keyed by `event.id` — idempotent if the same aggregate is saved more than once in the same transaction. It does not own a buffer field itself — its constructor takes a `DomainEventBusContext` (`{ current(): Map<string, DomainEvent> }`) and every method resolves the live buffer through it, so the entry point (not this library) decides how the buffer is scoped per unit of work (see "Execution context — correlationId propagation" above for the same idiom applied to tracing). The `context` parameter **defaults** to an internal single-buffer implementation, so `new DeferredDomainEventBus()` with no argument keeps working exactly as before this parameter was added — pass an explicit `DomainEventBusContext` (e.g. `AsyncLocalStorage`-backed) to opt into per-scope isolation under concurrency.
 
 ```typescript
-// composition root
-const domainEventBus = new DeferredDomainEventBus();
+// composition root — domainEventBusContext is provided by the entry point
+// (e.g. an AsyncLocalStorage-backed implementation scoping one buffer per request/invocation)
+const domainEventBus = new DeferredDomainEventBus(domainEventBusContext);
 
 // register handlers (DomainEventBusSubscriber)
 domainEventBus.subscribe(AccountOpened, new AccountOpenedDomainEventHandler(integrationPublisher, taskScheduler));

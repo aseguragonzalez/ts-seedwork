@@ -1,6 +1,11 @@
-import { Command, type CommandBus, Result } from '@src';
+import { Command, type CommandBus, type DomainEvent, type DomainEventBusContext, Result } from '@src';
 import { DeferredDomainEventBus } from '@src/infrastructure/deferred-domain-event-bus';
 import { DomainEventCoordinatorCommandBus } from '@src/infrastructure/domain-event-coordinator-command-bus';
+
+const singleBufferContext = (): DomainEventBusContext => {
+  const buffer = new Map<string, DomainEvent>();
+  return { current: () => buffer };
+};
 
 class DoSomething extends Command {
   constructor() {
@@ -17,7 +22,7 @@ const makeInner = (impl: (command: Command) => Promise<Result>): CommandBus => (
 describe('DomainEventCoordinatorCommandBus', () => {
   it('calls dispatch when inner bus returns ok result', async () => {
     const inner = makeInner(() => Promise.resolve(Result.ok()));
-    const eventBus = new DeferredDomainEventBus();
+    const eventBus = new DeferredDomainEventBus(singleBufferContext());
     jest.spyOn(eventBus, 'dispatch');
     jest.spyOn(eventBus, 'discard');
     const bus = new DomainEventCoordinatorCommandBus(inner, eventBus);
@@ -31,7 +36,7 @@ describe('DomainEventCoordinatorCommandBus', () => {
 
   it('calls discard (not dispatch) when inner bus returns fail result', async () => {
     const inner = makeInner(() => Promise.resolve(Result.failed([{ code: 'ERR', description: 'domain error' }])));
-    const eventBus = new DeferredDomainEventBus();
+    const eventBus = new DeferredDomainEventBus(singleBufferContext());
     jest.spyOn(eventBus, 'dispatch');
     jest.spyOn(eventBus, 'discard');
     const bus = new DomainEventCoordinatorCommandBus(inner, eventBus);
@@ -45,7 +50,7 @@ describe('DomainEventCoordinatorCommandBus', () => {
 
   it('propagates infrastructure exception without calling dispatch or discard', async () => {
     const inner = makeInner(() => Promise.reject(new Error('infra failure')));
-    const eventBus = new DeferredDomainEventBus();
+    const eventBus = new DeferredDomainEventBus(singleBufferContext());
     jest.spyOn(eventBus, 'dispatch');
     jest.spyOn(eventBus, 'discard');
     const bus = new DomainEventCoordinatorCommandBus(inner, eventBus);

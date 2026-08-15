@@ -231,6 +231,15 @@ return res.json(result.value);
 
 ---
 
+### `DomainEventBusContext`
+
+- **Role:** Small interface the caller implements and injects into `DeferredDomainEventBus`: `{ current(): Map<string, DomainEvent> }`. `current()` returns the live, mutable buffer for whatever unit of work is presently active.
+- **Responsibility split:** This package does not scope or own the buffer — the entry point that composes the bus (an API middleware, a Cloud Function wrapper, a subscriber/job) is responsible for making sure the right buffer is "current" when bus methods run, typically by backing the implementation with `node:async_hooks` `AsyncLocalStorage`. This library ships no concrete `DomainEventBusContext` implementation in `src/`, but `docs/examples/bank-account/infrastructure/async-local-domain-event-bus-context.ts` shows a complete `AsyncLocalStorage`-backed one, wired into the example's composition root by wrapping the command bus's entry point (`.use(...)`) in `context.run(...)`.
+- **Non-breaking:** `DeferredDomainEventBus`'s `context` constructor parameter **defaults** to an internal single-buffer implementation — `new DeferredDomainEventBus()` (no argument) behaves exactly as it did before this parameter was added, so existing code keeps compiling and running unchanged. Passing an explicit `DomainEventBusContext` is how a caller opts into per-scope isolation.
+- **Why it exists:** `DeferredDomainEventBus` used to hold a single instance-level buffer, which races when the same singleton is reused across concurrent async contexts (e.g. a warm serverless instance handling concurrent invocations). Injecting the buffer resolution moves that scoping decision to the caller, without forcing it on callers who don't need it.
+
+---
+
 ### `DomainEventHandler<TEvent>`
 
 - **Role:** Inbound port for reacting to domain events. Implemented in the application layer.
@@ -320,7 +329,7 @@ class SendWelcomeEmailHandler implements TaskHandler<SendWelcomeEmailTask> {
 - **Usage:** Wrap any `Repository` implementation with a `DomainEventBusPublisher`. The decorator calls `publisher.publish(entity.getDomainEvents())` after the inner `save` completes. `delete` and `getById` delegate without side effects — if deletion has domain significance, model it as an aggregate operation and call `save` before (or instead of) `delete`.
 
 ```typescript
-const publisher: DomainEventBusPublisher = new DeferredDomainEventBus();
+const publisher: DomainEventBusPublisher = new DeferredDomainEventBus(domainEventBusContext);
 const repository = new DomainEventPublishingRepository(new BankAccountRepositoryImpl(), publisher);
 
 // Handler stays clean — no event publishing, no knowledge of the bus:

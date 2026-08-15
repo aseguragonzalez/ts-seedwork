@@ -1,9 +1,19 @@
 import type { DomainEventBus, DomainEventHandler } from '../application/domain-event-bus.js';
+import type { DomainEventBusContext } from '../application/domain-event-bus-context.js';
 import type { DomainEvent } from '../domain/domain-event.js';
+
+class SingleBufferDomainEventBusContext implements DomainEventBusContext {
+  private readonly buffer = new Map<string, DomainEvent>();
+
+  current(): Map<string, DomainEvent> {
+    return this.buffer;
+  }
+}
 
 export class DeferredDomainEventBus implements DomainEventBus {
   protected readonly handlers = new Map<Function, DomainEventHandler<any>[]>();
-  protected readonly buffer = new Map<string, DomainEvent>();
+
+  constructor(protected readonly context: DomainEventBusContext = new SingleBufferDomainEventBusContext()) {}
 
   subscribe<TEvent extends DomainEvent>(
     eventType: Function & { prototype: TEvent },
@@ -14,16 +24,18 @@ export class DeferredDomainEventBus implements DomainEventBus {
   }
 
   async publish(events: ReadonlyArray<DomainEvent>): Promise<void> {
+    const buffer = this.context.current();
     for (const event of events) {
-      if (!this.buffer.has(event.id)) {
-        this.buffer.set(event.id, event);
+      if (!buffer.has(event.id)) {
+        buffer.set(event.id, event);
       }
     }
   }
 
   async dispatch(): Promise<void> {
-    const events = [...this.buffer.values()];
-    this.buffer.clear();
+    const buffer = this.context.current();
+    const events = [...buffer.values()];
+    buffer.clear();
     for (const event of events) {
       const handlers = this.handlers.get(event.constructor) ?? [];
       for (const handler of handlers) {
@@ -33,6 +45,6 @@ export class DeferredDomainEventBus implements DomainEventBus {
   }
 
   discard(): void {
-    this.buffer.clear();
+    this.context.current().clear();
   }
 }

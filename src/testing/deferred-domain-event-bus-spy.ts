@@ -9,11 +9,11 @@ export interface DomainEventBusSpy extends DomainEventBus {
 
 export class DeferredDomainEventBusSpy extends DeferredDomainEventBus implements DomainEventBusSpy {
   get pending(): ReadonlyArray<DomainEvent> {
-    return [...this.buffer.values()];
+    return [...this.context.current().values()];
   }
 
   reset(): void {
-    this.buffer.clear();
+    this.context.current().clear();
     this.handlers.clear();
   }
 }
