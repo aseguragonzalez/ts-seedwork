@@ -47,5 +47,21 @@
         "expiry": "2026-10-25",
       },
     },
+    {
+      // node-tar: uncontrolled recursion in mapHas/filesFilter allows an
+      // uncatchable stack-overflow DoS via a crafted long-path tar with
+      // member selection. Same unreachable npm-bundled copy as the entries
+      // above (confirmed npm still bundles tar@7.5.19, within the
+      // vulnerable <=7.5.20 range); npm audit's only fixAvailable path is
+      // downgrading semantic-release to 24.2.9, a major downgrade, not a
+      // real fix. Not reachable from published dist/ or from untrusted
+      // input in our build process.
+      // https://github.com/advisories/GHSA-r292-9mhp-454m
+      "GHSA-r292-9mhp-454m": {
+        "active": true,
+        "notes": "Covers only the copy bundled inside npm's own dependencies, unreachable via overrides. Re-check at next review.",
+        "expiry": "2026-10-25",
+      },
+    },
   ],
 }
