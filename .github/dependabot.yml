@@ -17,6 +17,9 @@ updates:
     ignore:
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
+      # vitepress-plugin-mermaid peer range is mermaid 10 || 11
+      - dependency-name: 'mermaid'
+        update-types: ['version-update:semver-major']
     target-branch: main
 
   - package-ecosystem: github-actions
