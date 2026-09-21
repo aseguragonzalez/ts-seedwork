@@ -90,9 +90,10 @@ async function findOpenIssue(repo, token, dependencyName) {
 
 async function openIssue(repo, token, { dependencyName, currentOverride, latestVersion, runUrl }) {
   const title = `chore(deps): npm override for ${dependencyName} may be stale`;
+  const pinned = typeof currentOverride === 'string' ? currentOverride : JSON.stringify(currentOverride);
   const body = [
     `Dropping the \`overrides\` entry for \`${dependencyName}\` (currently pinned to ` +
-      `\`${currentOverride}\`, latest available is \`${latestVersion}\`) and running a real ` +
+      `\`${pinned}\`, latest available is \`${latestVersion}\`) and running a real ` +
       '`npm install` followed by the full quality gate (audit, lint, format check, type check, ' +
       'test, build) succeeded.',
     '',
