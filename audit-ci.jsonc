@@ -63,5 +63,73 @@
         "expiry": "2026-10-25",
       },
     },
+    {
+      // brace-expansion: DoS via uncontrolled recursion in parseCommaParts.
+      // Every resolvable copy is patched (5.0.12, 2.1.7). This entry only
+      // covers the copy bundled inside npm's own dependencies (pulled in via
+      // @semantic-release/npm -> npm), which no override can reach; npm@12.2.0
+      // still bundles brace-expansion 5.0.9, inside the vulnerable <5.0.10
+      // range. Not reachable from published dist/ or from untrusted input in
+      // our build process.
+      // https://github.com/advisories/GHSA-6j4f-fj2g-mc7p
+      "GHSA-6j4f-fj2g-mc7p": {
+        "active": true,
+        "notes": "Covers only the copy bundled inside npm's own dependencies, unreachable via overrides. Re-check at next review.",
+        "expiry": "2026-11-04",
+      },
+    },
+    {
+      // brace-expansion: DoS via uncontrolled recursion on nested brace
+      // groups. Same unreachable npm-bundled copy as GHSA-6j4f-fj2g-mc7p
+      // above (npm@12.2.0 bundles 5.0.9, inside the vulnerable <5.0.11
+      // range); every resolvable copy is patched.
+      // https://github.com/advisories/GHSA-qhr7-859c-m2p7
+      "GHSA-qhr7-859c-m2p7": {
+        "active": true,
+        "notes": "Covers only the copy bundled inside npm's own dependencies, unreachable via overrides. Re-check at next review.",
+        "expiry": "2026-11-04",
+      },
+    },
+    {
+      // undici: DoS via an unrequested WebSocket subprotocol. Every
+      // resolvable copy is patched (7.30.0, and 6.29.0 under
+      // @actions/http-client). This entry only covers the copy bundled inside
+      // npm (npm -> node-gyp), which no override can reach; npm@12.2.0 still
+      // bundles undici 6.28.0, inside the vulnerable <6.28.1 range. npm uses it
+      // only for registry HTTP requests in the release job, never with
+      // untrusted WebSocket servers.
+      // https://github.com/advisories/GHSA-rfgv-xxqx-mfg5
+      "GHSA-rfgv-xxqx-mfg5": {
+        "active": true,
+        "notes": "Covers only the copy bundled inside npm's own dependencies, unreachable via overrides. Re-check at next review.",
+        "expiry": "2026-11-04",
+      },
+    },
+    {
+      // http-cache-semantics: max-stale handling can disclose cross-user
+      // cached responses. No patched release exists (all <=4.2.0 are
+      // affected), and the only copy is bundled inside npm
+      // (npm -> make-fetch-happen), unreachable via overrides; npm's cache is
+      // per-runner and single-user in the release job.
+      // https://github.com/advisories/GHSA-ch52-4w7c-c8xp
+      "GHSA-ch52-4w7c-c8xp": {
+        "active": true,
+        "notes": "No patched release; only copy is bundled inside npm, unreachable via overrides. Re-check when a fix ships.",
+        "expiry": "2026-11-04",
+      },
+    },
+    {
+      // braces: stack-exhaustion DoS through deeply nested patterns. No
+      // patched release exists (all <=3.0.3 are affected). The copy comes in
+      // through micromatch from semantic-release and its plugins, which only
+      // expand glob patterns from this repository's own release
+      // configuration, never untrusted input. Dev-only; not in published dist/.
+      // https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
+      "GHSA-vfj7-8cjw-p6xm": {
+        "active": true,
+        "notes": "No patched release; dev-only release tooling expanding repository-controlled globs. Re-check when a fix ships.",
+        "expiry": "2026-11-04",
+      },
+    },
   ],
 }
