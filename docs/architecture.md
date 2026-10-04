@@ -328,7 +328,7 @@ The Unit of Work defines the **transaction boundary for a single command executi
 **What is inside the transaction**
 
 - `Repository.save` — aggregate state persisted.
-- `DomainEventBus.dispatch` — domain event handlers execute synchronously.
+- `DomainEventBus.dispatch` — domain event handlers execute synchronously, including the handlers of events raised by those handlers' own changes (a handler that saves another aggregate): they are dispatched in further rounds before the command completes. More than 10 rounds that keep raising events fail the command and roll the transaction back, so a cycle between handlers can't loop.
 - `IntegrationEventPublisher.publish` — outbox record written.
 - `TaskScheduler.schedule` — task outbox record written.
 
