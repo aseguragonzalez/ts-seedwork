@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.6.0...v1.6.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* dispatch domain events published by handlers during DeferredDomainEventBus.dispatch ([#152](https://github.com/aseguragonzalez/ts-seedwork/issues/152)) ([2c30642](https://github.com/aseguragonzalez/ts-seedwork/commit/2c306423b4a6d1c4a62e4ab41f7b9bc672de0b99))
+
 # [1.6.0](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.5.0...v1.6.0) (2026-08-15)
 
 
