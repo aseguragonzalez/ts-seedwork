@@ -402,7 +402,7 @@ domainEventBus.subscribe(AccountOpened, new AccountOpenedDomainEventHandler(inte
 // wrap domain repository (DomainEventBusPublisher)
 const accounts = new DomainEventPublishingRepository(new PostgresAccountRepository(db), domainEventBus);
 
-// dispatch() drains the buffer and calls handlers; discard() clears without processing
+// dispatch() drains the buffer and calls handlers, including events they publish; discard() clears without processing
 // both are called internally by DomainEventCoordinatorCommandBus
 ```
 
@@ -410,7 +410,7 @@ const accounts = new DomainEventPublishingRepository(new PostgresAccountReposito
 
 - `publish(events)` — buffers events keyed by `event.id` (idempotent)
 - `subscribe(EventClass, handler)` — registers a handler for a specific event type
-- `dispatch()` — drains the buffer and invokes matching handlers
+- `dispatch()` — drains the buffer and invokes matching handlers, in rounds: events that handlers publish while it runs (e.g. a handler saving another aggregate through a `DomainEventPublishingRepository`) are dispatched in the next round, before `dispatch()` returns. After 10 rounds that still publish events it throws, so a cycle between handlers fails the command instead of looping. If a handler throws, the buffer is cleared before the error propagates.
 - `discard()` — clears the buffer without invoking handlers
 
 ### CommandBus Stack

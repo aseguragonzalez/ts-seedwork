@@ -152,6 +152,119 @@ describe('DeferredDomainEventBus', () => {
   });
 });
 
+describe('DeferredDomainEventBus cascading dispatch', () => {
+  it('dispatches an event published by a handler during the same dispatch', async () => {
+    const bus = new DeferredDomainEventBus(singleBufferContext());
+    const payments = makeHandler<PaymentReceived>();
+    bus.subscribe(OrderPlaced, {
+      handle: async (event: OrderPlaced) => bus.publish([new PaymentReceived(event.aggregateId, 10)]),
+    });
+    bus.subscribe(PaymentReceived, payments.handler);
+
+    await bus.publish([new OrderPlaced('order-1')]);
+    await bus.dispatch();
+
+    expect(payments.received).toHaveLength(1);
+    expect(payments.received[0]?.aggregateId).toBe('order-1');
+  });
+
+  it('dispatches events raised several handler levels deep, each level after the previous one', async () => {
+    const bus = new DeferredDomainEventBus(singleBufferContext());
+    const order: string[] = [];
+    bus.subscribe(OrderPlaced, {
+      handle: async (event: OrderPlaced) => {
+        order.push(`placed:${event.aggregateId}`);
+        await bus.publish([new PaymentReceived(event.aggregateId, 1)]);
+      },
+    });
+    bus.subscribe(PaymentReceived, {
+      handle: async (event: PaymentReceived) => {
+        order.push(`paid:${event.aggregateId}:${event.payload.amount}`);
+        if (event.payload.amount < 3) {
+          await bus.publish([new PaymentReceived(event.aggregateId, event.payload.amount + 1)]);
+        }
+      },
+    });
+
+    await bus.publish([new OrderPlaced('order-1')]);
+    await bus.dispatch();
+
+    expect(order).toEqual(['placed:order-1', 'paid:order-1:1', 'paid:order-1:2', 'paid:order-1:3']);
+  });
+
+  it('leaves the buffer empty once the cascade settles', async () => {
+    const bus = new DeferredDomainEventBusSpy(singleBufferContext());
+    bus.subscribe(OrderPlaced, {
+      handle: async (event: OrderPlaced) => bus.publish([new PaymentReceived(event.aggregateId, 10)]),
+    });
+
+    await bus.publish([new OrderPlaced('order-1')]);
+    await bus.dispatch();
+
+    expect(bus.pending).toEqual([]);
+  });
+
+  it('fails after a bounded number of rounds when handlers keep publishing, and clears the buffer', async () => {
+    const bus = new DeferredDomainEventBusSpy(singleBufferContext());
+    let rounds = 0;
+    bus.subscribe(OrderPlaced, {
+      handle: async (event: OrderPlaced) => {
+        rounds++;
+        await bus.publish([new OrderPlaced(`${event.aggregateId}+`)]);
+      },
+    });
+
+    await bus.publish([new OrderPlaced('order-1')]);
+
+    await expect(bus.dispatch()).rejects.toThrow('Domain events were still being published after 10 dispatch rounds');
+    expect(rounds).toBe(10);
+    expect(bus.pending).toEqual([]);
+  });
+
+  it('clears events published before a handler fails and rethrows the failure', async () => {
+    const bus = new DeferredDomainEventBusSpy(singleBufferContext());
+    const failure = new Error('handler failed');
+    const payments = makeHandler<PaymentReceived>();
+    bus.subscribe(OrderPlaced, {
+      handle: async (event: OrderPlaced) => {
+        await bus.publish([new PaymentReceived(event.aggregateId, 10)]);
+        throw failure;
+      },
+    });
+    bus.subscribe(PaymentReceived, payments.handler);
+
+    await bus.publish([new OrderPlaced('order-1')]);
+
+    await expect(bus.dispatch()).rejects.toBe(failure);
+    expect(payments.received).toEqual([]);
+    expect(bus.pending).toEqual([]);
+  });
+
+  it('keeps cascades of concurrent async contexts apart', async () => {
+    const context = new AsyncLocalDomainEventBusContext();
+    const bus = new DeferredDomainEventBus(context);
+    const payments = makeHandler<PaymentReceived>();
+    bus.subscribe(OrderPlaced, {
+      handle: async (event: OrderPlaced) => {
+        await new Promise(resolve => setTimeout(resolve, 5));
+        await bus.publish([new PaymentReceived(event.aggregateId, 10)]);
+      },
+    });
+    bus.subscribe(PaymentReceived, payments.handler);
+
+    await Promise.all(
+      ['order-1', 'order-2'].map(orderId =>
+        context.run(async () => {
+          await bus.publish([new OrderPlaced(orderId)]);
+          await bus.dispatch();
+        })
+      )
+    );
+
+    expect(payments.received.map(event => event.aggregateId).sort()).toEqual(['order-1', 'order-2']);
+  });
+});
+
 describe('DeferredDomainEventBusSpy', () => {
   it('pending returns buffered events before dispatch', async () => {
     const bus = new DeferredDomainEventBusSpy(singleBufferContext());

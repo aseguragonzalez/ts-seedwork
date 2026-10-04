@@ -112,6 +112,7 @@ A domain event is an **immutable fact** that something meaningful happened withi
 - Emitted by the aggregate root after a state change.
 - Payload contains primitives only — no value object instances, no aggregate references.
 - Processed **synchronously within the same transaction**. Domain event handlers run before the transaction commits.
+- Events raised by a handler's own changes (a handler that saves another aggregate) are dispatched in the same transaction too, after the events that caused them.
 - Scope: in-process, same bounded context.
 
 **Do**
@@ -406,6 +407,7 @@ sequenceDiagram
     Note over IEP: written to outbox (same TX)
     EH->>TS: schedule(task)
     Note over TS: written to outbox (same TX)
+    Note over DeferredBus: events published by handlers are<br/>dispatched in further rounds before returning
     EH-->>Bus: (returns)
     Note over Bus: 4. commit transaction
     Bus-->>API: Result
