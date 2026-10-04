@@ -1,4 +1,4 @@
-import { Command, type CommandBus, type DomainEvent, type DomainEventBusContext, Result } from '@src';
+import { BaseDomainEvent, Command, type CommandBus, type DomainEvent, type DomainEventBusContext, Result } from '@src';
 import { DeferredDomainEventBus } from '@src/infrastructure/deferred-domain-event-bus';
 import { DomainEventCoordinatorCommandBus } from '@src/infrastructure/domain-event-coordinator-command-bus';
 
@@ -13,6 +13,18 @@ class DoSomething extends Command {
     this.validate();
   }
   protected validate(): void {}
+}
+
+class Raised extends BaseDomainEvent<Record<string, never>> {
+  constructor() {
+    super('aggregate-1', {});
+  }
+}
+
+class Cascaded extends BaseDomainEvent<Record<string, never>> {
+  constructor() {
+    super('aggregate-1', {});
+  }
 }
 
 const makeInner = (impl: (command: Command) => Promise<Result>): CommandBus => ({
@@ -32,6 +44,32 @@ describe('DomainEventCoordinatorCommandBus', () => {
     expect(result.isOk()).toBe(true);
     expect(eventBus.dispatch).toHaveBeenCalledTimes(1);
     expect(eventBus.discard).not.toHaveBeenCalled();
+  });
+
+  it('handles events raised by domain event handlers before the command completes', async () => {
+    const eventBus = new DeferredDomainEventBus(singleBufferContext());
+    const handled: string[] = [];
+    eventBus.subscribe(Raised, {
+      handle: async () => {
+        handled.push('raised');
+        await eventBus.publish([new Cascaded()]);
+      },
+    });
+    eventBus.subscribe(Cascaded, {
+      handle: async () => {
+        handled.push('cascaded');
+      },
+    });
+    const inner = makeInner(async () => {
+      await eventBus.publish([new Raised()]);
+      return Result.ok();
+    });
+    const bus = new DomainEventCoordinatorCommandBus(inner, eventBus);
+
+    const result = await bus.dispatch(new DoSomething());
+
+    expect(result.isOk()).toBe(true);
+    expect(handled).toEqual(['raised', 'cascaded']);
   });
 
   it('calls discard (not dispatch) when inner bus returns fail result', async () => {

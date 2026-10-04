@@ -227,7 +227,7 @@ return res.json(result.value);
 
 - **`DomainEventBusPublisher`** — outbound port: `publish(events: ReadonlyArray<DomainEvent>): Promise<void>`. Injected into `DomainEventPublishingRepository`. Do **not** inject into command handlers.
 - **`DomainEventBusSubscriber`** — subscription port: `subscribe(eventType, handler)`. Used in the composition root to register `DomainEventHandler` instances.
-- **`DomainEventBus`** — extends both publisher and subscriber, adding `dispatch(): Promise<void>` (flush buffered events) and `discard(): void` (drop buffered events). `DeferredDomainEventBus` is the in-process implementation.
+- **`DomainEventBus`** — extends both publisher and subscriber, adding `dispatch(): Promise<void>` (flush buffered events) and `discard(): void` (drop buffered events). `DeferredDomainEventBus` is the in-process implementation: its `dispatch()` also dispatches the events handlers publish while it runs, round after round, until the buffer stays empty (at most 10 rounds; beyond that it throws), and clears the buffer if a handler throws.
 
 ---
 

@@ -2,6 +2,8 @@ import type { DomainEventBus, DomainEventHandler } from '../application/domain-e
 import type { DomainEventBusContext } from '../application/domain-event-bus-context.js';
 import type { DomainEvent } from '../domain/domain-event.js';
 
+const MAX_DISPATCH_ROUNDS = 10;
+
 class SingleBufferDomainEventBusContext implements DomainEventBusContext {
   private readonly buffer = new Map<string, DomainEvent>();
 
@@ -34,13 +36,26 @@ export class DeferredDomainEventBus implements DomainEventBus {
 
   async dispatch(): Promise<void> {
     const buffer = this.context.current();
-    const events = [...buffer.values()];
-    buffer.clear();
-    for (const event of events) {
-      const handlers = this.handlers.get(event.constructor) ?? [];
-      for (const handler of handlers) {
-        await handler.handle(event);
+    try {
+      for (let round = 1; buffer.size > 0; round++) {
+        if (round > MAX_DISPATCH_ROUNDS) {
+          throw new Error(
+            `Domain events were still being published after ${MAX_DISPATCH_ROUNDS} dispatch rounds; ` +
+              'check for handlers that keep raising events for each other'
+          );
+        }
+        const events = [...buffer.values()];
+        buffer.clear();
+        for (const event of events) {
+          const handlers = this.handlers.get(event.constructor) ?? [];
+          for (const handler of handlers) {
+            await handler.handle(event);
+          }
+        }
       }
+    } catch (error) {
+      buffer.clear();
+      throw error;
     }
   }
 
