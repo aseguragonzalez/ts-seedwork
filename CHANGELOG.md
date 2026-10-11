@@ -1,3 +1,11 @@
+## [1.6.2](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.6.1...v1.6.2) (2026-10-11)
+
+
+### Bug Fixes
+
+* **deps-dev:** resolve high and critical audit advisories in handlebars, vue and source-map-js ([#159](https://github.com/aseguragonzalez/ts-seedwork/issues/159)) ([c41ddb3](https://github.com/aseguragonzalez/ts-seedwork/commit/c41ddb335b57240ee67a8caa57b5563787aa56e6))
+* roll back the unit of work when a command returns a failed result ([#161](https://github.com/aseguragonzalez/ts-seedwork/issues/161)) ([ed01b43](https://github.com/aseguragonzalez/ts-seedwork/commit/ed01b4306389c52f9ecb89edbab2c28f4c79d367))
+
 ## [1.6.1](https://github.com/aseguragonzalez/ts-seedwork/compare/v1.6.0...v1.6.1) (2026-10-04)
 
 
