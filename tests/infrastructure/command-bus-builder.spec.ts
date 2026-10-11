@@ -8,6 +8,7 @@ import {
   type DomainEvent,
   type DomainEventBusContext,
   type DomainEventHandler,
+  type Repository,
   Result,
 } from '@src';
 import type { UnitOfWork } from '@src/domain/unit-of-work';
@@ -254,15 +255,61 @@ describe('CommandBusBuilder', () => {
       }
     }
 
+    /**
+     * Transaction-aware fake: writes are staged per session and only reach the
+     * committed store on commit(); rollback() discards them.
+     */
+    class TransactionalThingStore implements UnitOfWork, Repository<string, Thing> {
+      readonly committed = new InMemoryRepository<string, Thing>();
+      private staged: Map<string, Thing | null> | null = null;
+
+      async createSession(): Promise<void> {
+        this.staged = new Map();
+      }
+
+      async commit(): Promise<void> {
+        for (const [id, thing] of this.session().entries()) {
+          if (thing === null) await this.committed.deleteById(id);
+          else await this.committed.save(thing);
+        }
+        this.staged = null;
+      }
+
+      async rollback(): Promise<void> {
+        this.staged = null;
+      }
+
+      async findById(id: string): Promise<Thing | null> {
+        const staged = this.session();
+        return staged.has(id) ? (staged.get(id) ?? null) : this.committed.findById(id);
+      }
+
+      async save(thing: Thing): Promise<void> {
+        this.session().set(thing.id, thing);
+      }
+
+      async deleteById(id: string): Promise<void> {
+        this.session().set(id, null);
+      }
+
+      private session(): Map<string, Thing | null> {
+        if (this.staged === null) throw new Error('No open session');
+        return this.staged;
+      }
+    }
+
     const buildFullStack = (afterSave: () => void) => {
-      const uow = makeUow();
-      const store = new InMemoryRepository<string, Thing>();
+      const uow = new TransactionalThingStore();
+      jest.spyOn(uow, 'createSession');
+      jest.spyOn(uow, 'commit');
+      jest.spyOn(uow, 'rollback');
+      const store = uow.committed;
       const eventBus = new DeferredDomainEventBus(singleBufferContext());
       const eventHandler: jest.Mocked<DomainEventHandler<ThingCreated>> = {
         handle: jest.fn().mockResolvedValue(undefined),
       };
       eventBus.subscribe(ThingCreated, eventHandler);
-      const repository = new DomainEventPublishingRepository<string, Thing>(store, eventBus);
+      const repository = new DomainEventPublishingRepository<string, Thing>(uow, eventBus);
       const bus = new CommandBusBuilder()
         .register(DoSomething, new CreateThingHandler(repository, afterSave))
         .withTransaction(uow)
@@ -280,7 +327,7 @@ describe('CommandBusBuilder', () => {
 
       expect(result.isFailed()).toBe(true);
       expect(result.errors).toEqual([{ code: 'RULE_VIOLATED', description: 'rule violated' }]);
-      expect(store.all).toHaveLength(1); // the handler wrote before throwing; the rollback is what discards it
+      expect(store.all).toHaveLength(0);
       expect(uow.createSession).toHaveBeenCalledTimes(1);
       expect(uow.rollback).toHaveBeenCalledTimes(1);
       expect(uow.commit).not.toHaveBeenCalled();
@@ -288,11 +335,12 @@ describe('CommandBusBuilder', () => {
     });
 
     it('commits and dispatches events once when the handler succeeds', async () => {
-      const { bus, uow, eventHandler } = buildFullStack(() => {});
+      const { bus, uow, store, eventHandler } = buildFullStack(() => {});
 
       const result = await bus.dispatch(new DoSomething());
 
       expect(result.isOk()).toBe(true);
+      expect(store.all.map(thing => thing.id)).toEqual(['thing-1']);
       expect(uow.createSession).toHaveBeenCalledTimes(1);
       expect(uow.commit).toHaveBeenCalledTimes(1);
       expect(uow.rollback).not.toHaveBeenCalled();
@@ -301,12 +349,13 @@ describe('CommandBusBuilder', () => {
     });
 
     it('rolls back, rethrows and does not dispatch events when the handler writes then throws a non-domain error', async () => {
-      const { bus, uow, eventHandler } = buildFullStack(() => {
+      const { bus, uow, store, eventHandler } = buildFullStack(() => {
         throw new Error('storage failure');
       });
 
       await expect(bus.dispatch(new DoSomething())).rejects.toThrow('storage failure');
 
+      expect(store.all).toHaveLength(0);
       expect(uow.createSession).toHaveBeenCalledTimes(1);
       expect(uow.rollback).toHaveBeenCalledTimes(1);
       expect(uow.commit).not.toHaveBeenCalled();
