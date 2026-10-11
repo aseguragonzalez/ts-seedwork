@@ -1,15 +1,20 @@
 import {
+  AggregateRoot,
+  BaseDomainEvent,
   Command,
   type CommandBus,
   type CommandHandler,
   DomainError,
   type DomainEvent,
   type DomainEventBusContext,
+  type DomainEventHandler,
   Result,
 } from '@src';
 import type { UnitOfWork } from '@src/domain/unit-of-work';
 import { CommandBusBuilder } from '@src/infrastructure/command-bus-builder';
 import { DeferredDomainEventBus } from '@src/infrastructure/deferred-domain-event-bus';
+import { DomainEventPublishingRepository } from '@src/infrastructure/domain-event-publishing-repository';
+import { InMemoryRepository } from '@src/testing/in-memory-repository';
 
 const singleBufferContext = (): DomainEventBusContext => {
   const buffer = new Map<string, DomainEvent>();
@@ -115,7 +120,7 @@ describe('CommandBusBuilder', () => {
       expect(uow.rollback).not.toHaveBeenCalled();
     });
 
-    it('opens session and commits on DomainError (converted to Result.failed)', async () => {
+    it('opens session and rolls back without committing on DomainError (converted to Result.failed)', async () => {
       const uow = makeUow();
       const bus = new CommandBusBuilder().register(DoSomething, new DomainErrorHandler()).withTransaction(uow).build();
 
@@ -123,8 +128,8 @@ describe('CommandBusBuilder', () => {
 
       expect(result.isFailed()).toBe(true);
       expect(uow.createSession).toHaveBeenCalledTimes(1);
-      expect(uow.commit).toHaveBeenCalledTimes(1);
-      expect(uow.rollback).not.toHaveBeenCalled();
+      expect(uow.rollback).toHaveBeenCalledTimes(1);
+      expect(uow.commit).not.toHaveBeenCalled();
     });
 
     it('rolls back and rethrows on unexpected exception', async () => {
@@ -219,6 +224,93 @@ describe('CommandBusBuilder', () => {
       expect(result.isFailed()).toBe(true);
       expect(eventBus.discard).toHaveBeenCalledTimes(1);
       expect(eventBus.dispatch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('full stack (withTransaction > withDomainEventCoordination > registry)', () => {
+    class ThingCreated extends BaseDomainEvent<{ name: string }> {
+      constructor(aggregateId: string) {
+        super(aggregateId, { name: 'thing' });
+      }
+    }
+
+    class Thing extends AggregateRoot<string> {
+      constructor(id: string) {
+        super(id, [new ThingCreated(id)]);
+        this.validate();
+      }
+      protected validate(): void {}
+    }
+
+    class CreateThingHandler implements CommandHandler<DoSomething> {
+      constructor(
+        private readonly repository: DomainEventPublishingRepository<string, Thing>,
+        private readonly afterSave: () => void
+      ) {}
+
+      async handle(_command: DoSomething): Promise<void> {
+        await this.repository.save(new Thing('thing-1'));
+        this.afterSave();
+      }
+    }
+
+    const buildFullStack = (afterSave: () => void) => {
+      const uow = makeUow();
+      const store = new InMemoryRepository<string, Thing>();
+      const eventBus = new DeferredDomainEventBus(singleBufferContext());
+      const eventHandler: jest.Mocked<DomainEventHandler<ThingCreated>> = {
+        handle: jest.fn().mockResolvedValue(undefined),
+      };
+      eventBus.subscribe(ThingCreated, eventHandler);
+      const repository = new DomainEventPublishingRepository<string, Thing>(store, eventBus);
+      const bus = new CommandBusBuilder()
+        .register(DoSomething, new CreateThingHandler(repository, afterSave))
+        .withTransaction(uow)
+        .withDomainEventCoordination(eventBus)
+        .build();
+      return { bus, uow, store, eventHandler };
+    };
+
+    it('rolls back, does not commit and does not dispatch events when the handler writes then throws a DomainError', async () => {
+      const { bus, uow, store, eventHandler } = buildFullStack(() => {
+        throw new RuleViolatedError();
+      });
+
+      const result = await bus.dispatch(new DoSomething());
+
+      expect(result.isFailed()).toBe(true);
+      expect(result.errors).toEqual([{ code: 'RULE_VIOLATED', description: 'rule violated' }]);
+      expect(store.all).toHaveLength(1); // the handler wrote before throwing; the rollback is what discards it
+      expect(uow.createSession).toHaveBeenCalledTimes(1);
+      expect(uow.rollback).toHaveBeenCalledTimes(1);
+      expect(uow.commit).not.toHaveBeenCalled();
+      expect(eventHandler.handle).not.toHaveBeenCalled();
+    });
+
+    it('commits and dispatches events once when the handler succeeds', async () => {
+      const { bus, uow, eventHandler } = buildFullStack(() => {});
+
+      const result = await bus.dispatch(new DoSomething());
+
+      expect(result.isOk()).toBe(true);
+      expect(uow.createSession).toHaveBeenCalledTimes(1);
+      expect(uow.commit).toHaveBeenCalledTimes(1);
+      expect(uow.rollback).not.toHaveBeenCalled();
+      expect(eventHandler.handle).toHaveBeenCalledTimes(1);
+      expect(eventHandler.handle).toHaveBeenCalledWith(expect.any(ThingCreated));
+    });
+
+    it('rolls back, rethrows and does not dispatch events when the handler writes then throws a non-domain error', async () => {
+      const { bus, uow, eventHandler } = buildFullStack(() => {
+        throw new Error('storage failure');
+      });
+
+      await expect(bus.dispatch(new DoSomething())).rejects.toThrow('storage failure');
+
+      expect(uow.createSession).toHaveBeenCalledTimes(1);
+      expect(uow.rollback).toHaveBeenCalledTimes(1);
+      expect(uow.commit).not.toHaveBeenCalled();
+      expect(eventHandler.handle).not.toHaveBeenCalled();
     });
   });
 });

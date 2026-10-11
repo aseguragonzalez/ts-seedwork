@@ -34,16 +34,20 @@ describe('TransactionalCommandBus (seedwork package)', () => {
     expect(uow.rollback).not.toHaveBeenCalled();
   });
 
-  it('should commit when inner bus returns Result.failed', async () => {
+  it('should rollback, not commit, and return the same failed Result when inner bus returns Result.failed', async () => {
     const uow = makeUow();
-    const inner = makeInner(() => Promise.resolve(Result.failed([{ code: 'ERR', description: 'fail' }])));
+    const failed = Result.failed([{ code: 'ERR', description: 'fail' }]);
+    const inner = makeInner(() => Promise.resolve(failed));
     const bus = new TransactionalCommandBus(inner, uow);
 
     const result = await bus.dispatch(new DoSomething());
 
+    expect(result).toBe(failed);
     expect(result.isFailed()).toBe(true);
-    expect(uow.commit).toHaveBeenCalledTimes(1);
-    expect(uow.rollback).not.toHaveBeenCalled();
+    expect(result.errors[0].code).toBe('ERR');
+    expect(uow.createSession).toHaveBeenCalledTimes(1);
+    expect(uow.rollback).toHaveBeenCalledTimes(1);
+    expect(uow.commit).not.toHaveBeenCalled();
   });
 
   it('should rollback and rethrow on handler failure', async () => {
@@ -56,5 +60,18 @@ describe('TransactionalCommandBus (seedwork package)', () => {
     expect(uow.createSession).toHaveBeenCalledTimes(1);
     expect(uow.rollback).toHaveBeenCalledTimes(1);
     expect(uow.commit).not.toHaveBeenCalled();
+  });
+
+  it('should rollback and rethrow when commit throws', async () => {
+    const uow = makeUow();
+    uow.commit.mockRejectedValue(new Error('commit failed'));
+    const inner = makeInner();
+    const bus = new TransactionalCommandBus(inner, uow);
+
+    await expect(bus.dispatch(new DoSomething())).rejects.toThrow('commit failed');
+
+    expect(uow.createSession).toHaveBeenCalledTimes(1);
+    expect(uow.commit).toHaveBeenCalledTimes(1);
+    expect(uow.rollback).toHaveBeenCalledTimes(1);
   });
 });
