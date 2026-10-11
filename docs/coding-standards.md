@@ -435,7 +435,7 @@ const commandBus = new CommandBusBuilder()
 
 **Flow per command:**
 
-1. `TransactionalCommandBus` opens a UoW transaction
+1. `TransactionalCommandBus` opens a UoW transaction; commits only on `Result.ok()`. A `Result.failed()` (a `DomainError` thrown by the handler) or any exception rolls it back, so a rejected command never leaves partial writes
 2. `DomainEventCoordinatorCommandBus` calls `dispatch()` after the handler returns, `discard()` on rollback
 3. `RegistryCommandBus` routes to the correct `CommandHandler.handle()`
 

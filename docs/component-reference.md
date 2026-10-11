@@ -318,7 +318,11 @@ class SendWelcomeEmailHandler implements TaskHandler<SendWelcomeEmailTask> {
 
 ### `TransactionalCommandBus`
 
-- **Role:** `CommandBus` decorator. Wraps every dispatch in a `UnitOfWork` transaction: `createSession → dispatch → commit` on success, `rollback + rethrow` on exception.
+- **Role:** `CommandBus` decorator. Wraps every dispatch in a `UnitOfWork` transaction (`createSession → dispatch → commit` or `rollback`).
+- **Behaviour:**
+  - `Result.ok()` → `commit()`. If `commit()` throws, `rollback()` then rethrow.
+  - `Result.failed()` → `rollback()`; the failed `Result` is returned, not thrown. Writes made before the domain rejection are never persisted.
+  - Exception → `rollback()` then rethrow.
 - **Usage:** Pass any `CommandBus` and a `UnitOfWork` implementation. Because commands validate in their constructor, validation errors are always raised before `dispatch` is called — the transaction never opens for an invalid command.
 
 ---
@@ -370,7 +374,7 @@ const bus = new CommandBusBuilder()
 
 With this stack, each dispatch:
 
-1. Opens a transaction (`withTransaction`) — commits on success, rolls back and rethrows on unexpected exception
+1. Opens a transaction (`withTransaction`) — commits on `Result.ok()`, rolls back on `Result.failed()` (returning the failed `Result`), rolls back and rethrows on unexpected exception
 2. Dispatches deferred domain events after the handler returns (`withDomainEventCoordination`)
 3. Executes the handler (`registry`) — `DomainError` maps to `Result.failed`; other exceptions propagate
 

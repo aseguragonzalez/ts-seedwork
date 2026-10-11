@@ -9,13 +9,25 @@ export class TransactionalCommandBus implements CommandBus {
 
   public async dispatch(command: Command): Promise<Result> {
     await this.unitOfWork.createSession();
+    let result: Result;
     try {
-      const result = await this.inner.dispatch(command);
-      await this.unitOfWork.commit();
-      return result;
+      result = await this.inner.dispatch(command);
     } catch (error) {
       await this.unitOfWork.rollback();
       throw error;
     }
+
+    if (result.isFailed()) {
+      await this.unitOfWork.rollback();
+      return result;
+    }
+
+    try {
+      await this.unitOfWork.commit();
+    } catch (error) {
+      await this.unitOfWork.rollback();
+      throw error;
+    }
+    return result;
   }
 }
