@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // Tries dropping each `package.json` npm `overrides` entry one at a time. If a
 // real `npm install` without that override, followed by the quality gate,
-// still succeeds, opens (or leaves alone, if one is already open) a tracking
-// issue so a human can decide whether the override is safe to remove. Never
-// fails the workflow just because an override is still justified — that is
-// the expected, steady-state result.
+// still succeeds and brings back no `npm audit` advisory (of any severity) for
+// the packages that override covers, opens (or leaves alone, if one is already
+// open) a tracking issue so a human can decide whether the override is safe to
+// remove. Never fails the workflow just because an override is still
+// justified — that is the expected, steady-state result.
 
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -14,9 +15,12 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 const packageJsonPath = path.join(repoRoot, 'package.json');
 
-const QUALITY_STEPS = [
+const INSTALL_AND_AUDIT_STEPS = [
   ['npm', ['install']],
   ['npm', ['run', 'audit']],
+];
+
+const QUALITY_STEPS = [
   ['npm', ['run', 'lint']],
   ['npm', ['run', 'format:check']],
   ['npm', ['run', 'type:check']],
@@ -30,6 +34,42 @@ function sh(cmd, args, cwd) {
   return execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: 'pipe', maxBuffer: MAX_BUFFER });
 }
 
+function describeOverride(override) {
+  return typeof override === 'string' ? override : JSON.stringify(override);
+}
+
+function packageNameOf(selector) {
+  const at = selector.indexOf('@', 1);
+  return at === -1 ? selector : selector.slice(0, at);
+}
+
+function coveredPackages(selector, override) {
+  const name = packageNameOf(selector);
+  if (typeof override === 'string') {
+    return [name];
+  }
+  return Object.entries(override).flatMap(([key, value]) => (key === '.' ? [name] : coveredPackages(key, value)));
+}
+
+function auditAdvisories(cwd, packages) {
+  let output;
+  try {
+    output = sh('npm', ['audit', '--json'], cwd);
+  } catch (error) {
+    output = error.stdout ?? '';
+  }
+  const report = JSON.parse(output || '{}');
+  const advisories = new Set();
+  for (const vulnerability of Object.values(report.vulnerabilities ?? {})) {
+    for (const via of vulnerability.via ?? []) {
+      if (typeof via === 'object' && packages.includes(via.name)) {
+        advisories.add(via.url);
+      }
+    }
+  }
+  return advisories;
+}
+
 function readOverrideEntries() {
   const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
   return pkg.overrides ?? {};
@@ -39,7 +79,18 @@ function latestVersionOf(name) {
   return sh('npm', ['view', name, 'version']).trim();
 }
 
-function attemptWithoutOverride(name) {
+function runSteps(steps, cwd) {
+  for (const [cmd, args] of steps) {
+    try {
+      sh(cmd, args, cwd);
+    } catch (error) {
+      return { passed: false, step: `${cmd} ${args.join(' ')}`, log: tail(error) };
+    }
+  }
+  return { passed: true };
+}
+
+function attemptWithoutOverride(name, override) {
   const worktree = mkdtempSync(path.join(tmpdir(), 'npm-override-'));
   try {
     sh('git', ['worktree', 'add', '--detach', worktree, 'HEAD'], repoRoot);
@@ -54,14 +105,21 @@ function attemptWithoutOverride(name) {
     } catch (error) {
       return { passed: false, step: 'rewrite package.json', log: tail(error) };
     }
-    for (const [cmd, args] of QUALITY_STEPS) {
-      try {
-        sh(cmd, args, worktree);
-      } catch (error) {
-        return { passed: false, step: `${cmd} ${args.join(' ')}`, log: tail(error) };
-      }
+    const installed = runSteps(INSTALL_AND_AUDIT_STEPS, worktree);
+    if (!installed.passed) {
+      return installed;
     }
-    return { passed: true };
+    const packages = coveredPackages(name, override);
+    const baseline = auditAdvisories(repoRoot, packages);
+    const reintroduced = [...auditAdvisories(worktree, packages)].filter(url => !baseline.has(url));
+    if (reintroduced.length > 0) {
+      return {
+        passed: false,
+        step: 'npm audit (any severity)',
+        log: `Advisories reintroduced for ${packages.join(', ')}:\n${reintroduced.join('\n')}`,
+      };
+    }
+    return runSteps(QUALITY_STEPS, worktree);
   } finally {
     try {
       sh('git', ['worktree', 'remove', '--force', worktree], repoRoot);
@@ -90,12 +148,13 @@ async function findOpenIssue(repo, token, dependencyName) {
 
 async function openIssue(repo, token, { dependencyName, currentOverride, latestVersion, runUrl }) {
   const title = `chore(deps): npm override for ${dependencyName} may be stale`;
-  const pinned = typeof currentOverride === 'string' ? currentOverride : JSON.stringify(currentOverride);
+  const pinned = describeOverride(currentOverride);
   const body = [
     `Dropping the \`overrides\` entry for \`${dependencyName}\` (currently pinned to ` +
       `\`${pinned}\`, latest available is \`${latestVersion}\`) and running a real ` +
       '`npm install` followed by the full quality gate (audit, lint, format check, type check, ' +
-      'test, build) succeeded.',
+      'test, build) succeeded, and `npm audit` reports no advisory of any severity that the removal ' +
+      'brings back for the packages it covers.',
     '',
     "This suggests the condition that originally justified this entry in `package.json`'s " +
       '`overrides` (regression, vulnerability, or peer conflict) may no longer apply.',
@@ -143,17 +202,18 @@ async function main() {
 
   for (const [name, override] of Object.entries(entries)) {
     const latest = latestVersionOf(name);
+    const described = describeOverride(override);
 
-    console.log(`Testing ${name} without its override (currently ${override}, latest ${latest})...`);
-    const result = attemptWithoutOverride(name);
+    console.log(`Testing ${name} without its override (currently ${described}, latest ${latest})...`);
+    const result = attemptWithoutOverride(name, override);
 
     if (!result.passed) {
-      appendSummary(`| ${name} | ${override} | ${latest} | still needed (failed at \`${result.step}\`) |`);
+      appendSummary(`| ${name} | ${described} | ${latest} | still needed (failed at \`${result.step}\`) |`);
       console.log(result.log);
       continue;
     }
 
-    appendSummary(`| ${name} | ${override} | ${latest} | ✅ removable — see tracking issue |`);
+    appendSummary(`| ${name} | ${described} | ${latest} | ✅ removable — see tracking issue |`);
 
     if (!repo || !token) {
       console.log('GITHUB_REPOSITORY/GITHUB_TOKEN not set, skipping issue creation.');
