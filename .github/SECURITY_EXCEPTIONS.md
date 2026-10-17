@@ -23,8 +23,11 @@ to fix it. If the affected package _is_ a direct dependency, prefer bumping it (
 
 **Staleness check:** `.github/workflows/npm-overrides-check.yml` (cron `0 8 * * 3`, i.e. weekly on
 Wednesday) runs `scripts/check-npm-overrides.mjs`, which drops each override entry one at a time in
-a scratch worktree, runs a real `npm install` plus the full quality gate (lint, format check, type
-check, test, build), and — if that succeeds — opens or updates a tracking issue labeled
+a scratch worktree, runs a real `npm install` plus the full quality gate (audit, lint, format check,
+type check, test, build), and checks `npm audit` for any advisory, whatever its severity, that the
+removal brings back for the packages the override covers (the overridden package, or the nested
+packages of a scoped override such as `"mermaid": { "katex": "..." }`). If the gate passes and no
+advisory comes back, it opens or updates a tracking issue labeled
 `override-stale` (and `dependencies`).
 
 **Before removing an entry:** the automation only proves that dropping the override still installs
