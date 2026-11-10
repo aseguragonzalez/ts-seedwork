@@ -2,20 +2,5 @@
   // $schema provides code completion hints to IDEs.
   "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
   "high": true,
-  "allowlist": [
-    {
-      // undici: DoS via an unhandled error on excessive content-encodings.
-      // Every resolvable copy is patched (7.30.1, and 6.29.1 under
-      // @actions/http-client). This entry only covers the copy bundled inside
-      // npm (npm -> node-gyp), which no override can reach; npm@11.21.1 and
-      // npm@12.2.1 still bundle undici 6.29.0, inside the vulnerable <6.29.1
-      // range. npm uses it only for registry HTTP requests in the release job.
-      // https://github.com/advisories/GHSA-xjj6-f33q-929c
-      "GHSA-xjj6-f33q-929c": {
-        "active": true,
-        "notes": "Covers only the copy bundled inside npm's own dependencies, unreachable via overrides. Re-check at next review.",
-        "expiry": "2026-11-08",
-      },
-    },
-  ],
+  "allowlist": [],
 }
