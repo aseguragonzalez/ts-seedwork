@@ -7,7 +7,7 @@
           "run": "npm run build"
         },
         "format": {
-          "run": "npm run format"
+          "run": "npm run format:check"
         },
         "lint": {
           "run": "npm run lint"
@@ -32,9 +32,9 @@
     "quirks": [
       "The repository's own workflow docs (CLAUDE.md, .claude/skills/gh-workflow/SKILL.md, .github/CONTRIBUTING.md, .github/PULL_REQUEST_TEMPLATE.md) still use 'Closes #N'; pull requests use 'Relates to #N', since an issue is done only when its release is published to npm.",
       "main merges by squash only, so the pull request title is the commit semantic-release reads: its Conventional Commit type sets the version bump.",
-      "The 'API surface check' job diffs dist/*.d.ts against main and fails unless the title is 'feat:' for additions or 'feat!:' for removals and changed signatures.",
+      "The 'API surface check' job diffs dist/*.d.ts against main and reads the pull request's commits (git log origin/main..HEAD), not its title: they must carry 'feat:' for additions, or 'feat!:' or a 'BREAKING CHANGE' footer for removals and changed signatures.",
       "The quality job runs 'npm run audit' (audit-ci) first; a dependency-security exception follows .github/SECURITY_EXCEPTIONS.md, never an ad hoc silence.",
-      "'codecov/patch' is a required check computed by Codecov from CI coverage, and main also requires CodeQL code scanning with no high or higher alerts.",
+      "'codecov/patch' is a required check computed by Codecov from CI coverage, and main also requires CodeQL code scanning with no security alert of high severity or more and no error or warning alert.",
       "Never edit the version in package.json or CHANGELOG.md by hand; semantic-release commits them as 'chore(release): ... [skip ci]'."
     ],
     "requiredChecks": [
