@@ -1,6 +1,8 @@
 {
   "name": "ts-seedwork",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "workspaceFolder": "/workspaces/ts-seedwork",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/ts-seedwork,type=bind",
   "customizations": {
     "vscode": {
       "extensions": [
